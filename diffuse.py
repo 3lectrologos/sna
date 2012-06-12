@@ -1,18 +1,66 @@
+"""
+ETH Zurich | Spring Semester 2012 | Introduction to Social Network Analysis
+Final Project: Simulating disease spread in social networks
+"""
+
+__author__ = "Alkis Gkotovos"
+__email__ = "alkisg@student.ethz.ch"
+
+
 import numpy
 import math
 import networkx as nx
 import matplotlib.pyplot as plt
 import time
 import random
+import progressbar as pb
+
+NORMAL_COLOR = '#5555EE'
+CONTAM_COLOR = '#009926'
+IMMUNE_COLOR = '#E6C200'
+DEAD_COLOR = '#DDDDDD'
+
+def clamp(val, minimum=0, maximum=255):
+    if val < minimum:
+        return minimum
+    if val > maximum:
+        return maximum
+    return val
+
+def colorscale(hexstr, scalefactor):
+    """
+    Scale a hex string by ``scalefactor``.
+    """
+    hexstr = hexstr.strip('#')
+    if scalefactor < 0 or len(hexstr) != 6:
+        return hexstr
+    r, g, b = int(hexstr[:2], 16), int(hexstr[2:4], 16), int(hexstr[4:], 16)
+    r = clamp(r * scalefactor)
+    g = clamp(g * scalefactor)
+    b = clamp(b * scalefactor)
+    return "#%02x%02x%02x" % (r, g, b)
 
 class Nodes(nx.MultiGraph):
-    P_CONTAM = 0.2
-    T_CONTAM = 5
-    P_IMMUNITY = 0.3
+    """
+    Encapsulate a graph to allow for disease spread simulation.
+    """
+
+    # Probability of contaminating a healthy neighbor
+    P_CONTAM = 0.05
+    # Time-steps for which the disease is active
+    T_CONTAM = 6
+    # Probability that a node will become immune after the disease has passed
+    P_IMMUNITY = 0.2
+    # Probability that a node will die at each time step that it is diseased
     P_DEATH = 0.05
 
     def __init__(self, g):
         nx.MultiGraph.__init__(self, g)
+        self.reset()
+
+    def __init__(self, g, k):
+        nx.MultiGraph.__init__(self, g)
+        self.k = k
         self.reset()
 
     def reset(self):
@@ -20,7 +68,8 @@ class Nodes(nx.MultiGraph):
         self.contam = set()
         self.immune = set()
         self.dead = set()
-        self.contam_time = {}        
+        self.contam_time = {}
+        self.set_contam(random.sample(self.nodes(), self.k))
 
     def set_normal(self, new):
         new = set(new)
@@ -58,7 +107,8 @@ class Nodes(nx.MultiGraph):
                 v[1] not in self.dead]
 
     def step(self):
-        # die
+        # For every contaminated node randomly decide if he dies
+        # according to P_DEATH.
         new_dead = []
         for v in self.contam:
             if random.random() < self.P_DEATH:
@@ -66,7 +116,8 @@ class Nodes(nx.MultiGraph):
         [self.contam_time.pop(v) for v in set(new_dead)]
         self.contam = self.contam - set(new_dead)
         self.dead = self.dead | set(new_dead)
-        # contaminate
+        # For every neighbor of a contaminated node randomly decide if he
+        # catches the disease according to P_CONTAM.
         new_contam = []
         for (v1, v2) in self.edges():
             if v1 in self.contam and v2 in self.normal and \
@@ -76,7 +127,9 @@ class Nodes(nx.MultiGraph):
                     random.random() < self.P_CONTAM:
                 new_contam.append(v1)
         self.set_contam(new_contam)
-        # decontaminate
+        # For every contaminated node whose contamination period is over
+        # (according to T_CONTAM), randomly decide if he becomes immune
+        # or just healthy according to P_IMMUNITY.
         new_immune = []
         for (v, t) in self.contam_time.iteritems():
             if t == 0:
@@ -106,10 +159,6 @@ class Nodes(nx.MultiGraph):
         return ret
 
 def draw_network(g, pos):
-    NORMAL_COLOR = '0.5'
-    CONTAM_COLOR = 'g'
-    IMMUNE_COLOR = '#E6C200'
-    DEAD_COLOR = '0.8'
     NODE_SIZE = 500
     plt.clf()
     nx.draw_networkx_nodes(g, pos=pos,
@@ -135,71 +184,205 @@ def draw_network(g, pos):
     nx.draw_networkx_labels(g, pos=pos, font_color='0.95', font_size=11)
     plt.draw()
 
-def simulate(g, niter):
-#plt.ion()
-#draw_network(g, pos)
-#time.sleep(1)
-    its = []
-    dead = []
-    immune = []
-    normal = []
-    it = 0
-    for it in range(niter):
-        g.reset()
-        g.set_contam([1, 42, 50])
-        j = 0
-        while g.contam:
-            g.step()
-            j += 1
-        its.append(j)
+def simulate_evo(g, plot=False):
+    """
+    Simulate a single evolution of the disease in the given network.
+    The evolution ends when there are no more diseased nodes. Return
+    information about the network at each time step.
+    """
+    its = 0
+    contam = [len(g.contam)]
+    dead = [len(g.dead)]
+    immune = [len(g.immune)]
+    normal = [len(g.normal)]
+    g.reset()
+    while g.contam:
+        g.step()
+        contam.append(len(g.contam))
         dead.append(len(g.dead))
         immune.append(len(g.immune))
         normal.append(len(g.normal))
+        its += 1
+        if plot:
+            draw_network(g, pos)
+            time.sleep(1)
     return {'its': its,
+            'nodes': len(g.nodes()),
+            'contam': contam,
             'dead': dead,
             'immune': immune,
             'normal': normal}
-    #draw_network(g, pos)
-    #time.sleep(1)
 
-FILE = 'adjnoun.gml'
-g = Nodes(nx.read_gml(FILE))
-#pos = nx.spring_layout(g, iterations=200)
+def simulate(g, niter, plot=False):
+    """
+    Simulate niter evolutions of the disease in the given network.
+    Each evolution ends when there are no more diseased nodes. Return
+    information about the final state of the network at each iteration.
+    """
+    its = []
+    dead = []
+    immune = []
+    max_contam = []
+    normal = []
+    it = 0
+    widgets = [pb.Bar('>'), ' ', pb.ETA(), ' ', pb.ReverseBar('<')]
+    progress = pb.ProgressBar(widgets=widgets)
+    for it in progress(range(niter)):
+        g.reset()
+        mc = 0
+        j = 0
+        while g.contam:
+            g.step()
+            mc = max(mc, len(g.contam))
+            j += 1
+            if plot:
+                draw_network(g, pos)
+                time.sleep(1)
+        its.append(j)
+        dead.append(len(g.dead))
+        immune.append(len(g.immune))
+        max_contam.append(mc)
+        normal.append(len(g.normal))
+    return {'its': its,
+            'max_contam': max_contam,
+            'nodes': len(g.nodes()),
+            'dead': dead,
+            'immune': immune,
+            'normal': normal}
 
-nsim = 10000
-res = simulate(g, nsim)
-numnodes = len(g.nodes())
+def plot_evo(data):
+    """
+    Create line plot depicting a single network evolution.
+    """
+    its = data['its']
+    nodes = data['nodes']
+    contam = [(1.0*d)/nodes for d in data['contam']]
+    dead = [(1.0*d)/nodes for d in data['dead']]
+    immune = [(1.0*d)/nodes for d in data['immune']]
+    normal = [(1.0*d)/nodes for d in data['normal']]
+    legitems = []
+    p = plt.plot(contam, linestyle='-', marker='o', linewidth=2,
+                 markeredgecolor=colorscale(CONTAM_COLOR, 0.2),
+                 markersize=6,
+                 color=CONTAM_COLOR)
+    legitems.append(p)
+    p = plt.plot(dead, linestyle='-', marker='o', linewidth=2,
+                 markeredgecolor=colorscale(DEAD_COLOR, 0.1),
+                 markersize=6,
+                 color=colorscale(DEAD_COLOR, 0.7))
+    legitems.append(p)
+    p = plt.plot(immune, linestyle='-', marker='o', linewidth=2,
+                 markeredgecolor=colorscale(IMMUNE_COLOR, 0.4),
+                 markersize=6,
+                 color=IMMUNE_COLOR)
+    legitems.append(p)
+    p = plt.plot(normal, linestyle='-', marker='o', linewidth=2,
+                 markeredgecolor=colorscale(NORMAL_COLOR, 0.4),
+                 markersize=6,
+                 color=NORMAL_COLOR)
+    legitems.append(p)
+    plt.xlim([0, its])
+    plt.ylim([0, 1])
+    plt.legend(legitems, ['contaminated %', 'dead %', 'immune %', 'normal %'], 1)
+    plt.show()
 
-header = FILE + ' (' + str(nsim) + ' simulations)'
-print header
-print len(header)*'-'
-its = res['its']
-its_avg = numpy.average(its)
-its_std = math.sqrt(numpy.var(its))
-dead = res['dead']
-dead_avg = 100*numpy.average(dead)/numnodes
-dead_std = 100*math.sqrt(numpy.var(dead))/numnodes
-immune = res['immune']
-immune_avg = 100*numpy.average(immune)/numnodes
-immune_std = 100*math.sqrt(numpy.var(immune))/numnodes
-normal = res['normal']
-normal_avg = 100*numpy.average(normal)/numnodes
-normal_std = 100*math.sqrt(numpy.var(normal))/numnodes
-print 'avg. its      :', its_avg, '(' + str(its_std) + ')'
-print 'avg. dead   % :', dead_avg, '(' + str(dead_std) + ')'
-print 'avg. immune % :', immune_avg, '(' + str(immune_std) + ')'
-print 'avg. normal % :', normal_avg, '(' + str(normal_std) + ')'
+def average_data(data):
+    """
+    Find mean and std. deviation of data returned by ``simulate``.
+    """
+    numnodes = data['nodes']
+    its = data['its']
+    its_mean = numpy.average(its)
+    its_std = math.sqrt(numpy.var(its))
+    dead = data['dead']
+    dead_mean = 1.0*numpy.average(dead)/numnodes
+    dead_std = 1.0*math.sqrt(numpy.var(dead))/numnodes
+    immune = data['immune']
+    immune_mean = 1.0*numpy.average(immune)/numnodes
+    immune_std = 1.0*math.sqrt(numpy.var(immune))/numnodes
+    max_contam = data['max_contam']
+    max_contam_mean = 1.0*numpy.average(max_contam)/numnodes
+    max_contam_std = 1.0*math.sqrt(numpy.var(max_contam))/numnodes
+    normal = data['normal']
+    normal_mean = 1.0*numpy.average(normal)/numnodes
+    normal_std = 1.0*math.sqrt(numpy.var(normal))/numnodes
+    return {'its': (its_mean, its_std),
+            'nodes': numnodes,
+            'dead': (dead_mean, dead_std),
+            'immune': (immune_mean, immune_std),
+            'max_contam': (max_contam_mean, max_contam_std),
+            'normal': (normal_mean, normal_std)}
 
-#from pylab import *
-#import time
-#
-#ion()
-#
-#tstart = time.time()               # for profiling
-#x = arange(0,2*pi,0.01)            # x-array
-#line, = plot(x,sin(x))
-#for i in arange(1,200):
-#    line.set_ydata(sin(x+i/10.0))  # update the data
-#    draw()                         # redraw the canvas
-#
-#print 'FPS:' , 200/(time.time()-tstart)
+def simulate_range(gfun, vals, niter):
+    """
+    Simulate disease evolution for a range of different values of a parameter.
+    """
+    data = []
+    for val in vals:
+        g = gfun(val)
+        r = simulate(g, niter)
+        data.append(average_data(r))
+    return {'vals': vals, 'data': data}
+
+def plot_range(data, xlabel='x', ylabel='y'):
+    """
+    Plot network evolution data returned by ``simulate_range``.
+    """
+    vals = data['vals']
+    data = data['data']
+    dead = [r['dead'][0] for r in data]
+    immune = [r['immune'][0] for r in data]
+    max_contam = [r['max_contam'][0] for r in data]
+    legitems = []
+    p = plt.plot(vals, max_contam, linestyle='-', marker='o', linewidth=2,
+                 markeredgecolor=colorscale(CONTAM_COLOR, 0.2),
+                 markersize=6,
+                 color=CONTAM_COLOR)
+    legitems.append(p)
+    p = plt.plot(vals, dead, linestyle='-', marker='o', linewidth=2,
+                 markeredgecolor=colorscale(DEAD_COLOR, 0.1),
+                 markersize=6,
+                 color=colorscale(DEAD_COLOR, 0.7))
+    legitems.append(p)
+    print dead
+    p = plt.plot(vals, immune, linestyle='-', marker='o', linewidth=2,
+                 markeredgecolor=colorscale(IMMUNE_COLOR, 0.4),
+                 markersize=6,
+                 color=IMMUNE_COLOR)
+    legitems.append(p)
+    #p = plt.plot(normal, linestyle='-', marker='o', linewidth=2,
+    #             markeredgecolor=colorscale(NORMAL_COLOR, 0.4),
+    #             markersize=6,
+    #             color=NORMAL_COLOR)
+    #legitems.append(p)
+    #plt.xlim([0, vals])
+    plt.ylim([0, 1])
+    plt.legend(legitems, ['max. contam. %', 'dead %', 'immune %'], 1)
+    plt.show()
+
+if __name__=="__main__":
+    gfun = lambda n: Nodes(nx.barabasi_albert_graph(100, n), k=3)
+    res = simulate_range(gfun, [2, 3, 4, 5, 10, 15, 20, 25, 30], 10000)
+    plot_range(res)
+    #g = Nodes(nx.erdos_renyi_graph(100, 0.9))
+    #g = Nodes(nx.watts_strogatz_graph(100, 30, 0.8))
+    #g = Nodes(nx.barabasi_albert_graph(10000, 5))
+    #pos = nx.spring_layout(g, iterations=100)
+    #plt.ion()
+
+    #res = simulate_evo(g, plot=False)
+    #plot_evo(res)
+
+    #nsim = 1000
+    #res = simulate(g, nsim, plot=True)
+    #numnodes = len(g.nodes())
+    
+    #NAME = 'Erdos-Renyi (100, 0.3)'
+    #header = NAME + ' (' + str(nsim) + ' simulations)'
+    #print header
+    #print len(header)*'-'
+ 
+    #print 'avg. its      :', its_avg, '(' + str(its_std) + ')'
+    #print 'avg. dead   % :', dead_avg, '(' + str(dead_std) + ')'
+    #print 'avg. immune % :', immune_avg, '(' + str(immune_std) + ')'
+    #print 'avg. normal % :', normal_avg, '(' + str(normal_std) + ')'
