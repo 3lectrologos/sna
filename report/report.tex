@@ -1,4 +1,4 @@
-\documentclass{article} % For LaTeX2e
+\documentclass[10pt]{article} % For LaTeX2e
 \usepackage{nips12submit_e,times}
 %\documentstyle[nips12submit_09,times,art10]{article} % For LaTeX 2.09
 
@@ -12,29 +12,16 @@
 \usepackage{graphicx}
 \usepackage{color}
 
-\newcommand{\cA}{\ensuremath{\mathcal{A}}}
-\newcommand{\cR}{\ensuremath{\mathcal{R}}}
-\newcommand{\cO}{\ensuremath{\mathcal{O}}}
-\newcommand{\smoothalpha}{$0.01$ }
-
-% argmax operator
-\DeclareMathOperator*{\argmax}{arg\,max}
+\usepackage{url}
+\usepackage{hyperref}
 
 \newcommand{\todo}[1]{\noindent\texttt{\color[rgb]{0.5,0.1,0.1} TODO: #1}}
-\newcommand{\class}[1]{\texttt{#1}}
-\newcommand{\file}[1]{\textbf{#1}}
-\newcommand{\code}[1]{\texttt{#1}}
-\newcommand{\function}[1]{\texttt{#1()}}
-\newcommand{\var}[1]{\textit{#1}}
-\newcommand{\option}[1]{\textit{#1}}
-\newcommand{\env}[1]{\textit{#1}}
 
-\title{Foundations of AI:\\Practical Assignment}
+\title{Introduction to Social Network Analysis:\\Final Project}
 
 \author{
 Alkis Gkotovos\\
-Department of Computer Science\\
-ETH Zurich\\
+Department of Computer Science, ETH Zurich\\
 \texttt{alkisg@student.ethz.ch}
 }
 
@@ -56,15 +43,47 @@ ETH Zurich\\
 
 \maketitle
 
-%\begin{abstract}
-%\end{abstract}
+\begin{abstract}
+In this report I present a model, similar to the common SIR and SIS models,
+which can be used to simulate the spread of an infectious disease in
+social networks. I also present and discuss simulation results on several
+kinds of generated networks for different choices of model and graph parameters.
+\end{abstract}
 
 \section{Introduction}
-In this report we describe our implementation of a general learning agent,
-based on approximating the AIXI model using a combination of Monte Carlo
-Tree Search for planning and Context Tree Weighting for modelling the
-agent's environment, as described by Veness et al. in \cite{mc_aixi_ctw},
-and hereafter called MC-AIXI-CTW.
+The spread of diseases in human networks is an interesting research topic, both
+for historical reasons (e.g. analysis of the ``Black Death'' pandemic in the
+14th century~\cite{blackdeath}), as well as for dealing with contemporary or
+future epidemics (e.g. AIDS spread in Africa~\cite{aids}). Furthermore, the
+concept of network diffusion can be generalized to other types of phenomena,
+like the spread of computer viruses in e-mail networks~\cite{email}, or even
+the spread of behavioral phenomena, also referred to as
+\emph{social contagion}~\cite{contagion}.
+
+To fully analyze disease spread in networks, one needs to know in detail the
+characteristics of the disease itself (transimission, active period, etc.),
+as well as a fine-grained network of interactions. Moreover, the network
+information required may depend on the disease attributes (e.g. for an airborne virus
+it may be important to include interactions in public transport). Since this
+kind of information is usually not available, there have been proposed a
+number of simple models that can be used as a first step for analyzing disease
+spread. Two of them commonly found in the literature are the SIR and SIS
+models~\cite{easley, newman}.
+
+Both models assume discrete time steps and represent each node of the network
+as a state machine that can be in exactly one state at each time step. In the
+SIR model healthy nodes that can be infected are in the \emph{susceptible} ($S$)
+state, infected nodes are in the \emph{infected} (I) state, and nodes that have
+gone through the infection and cannot be infected again are in the \emph{removed}
+($R$) state. At every time step, an $I$ node may independently infect each of
+its $S$ neighbors with probability $p_I$ and an $I$ node stays infected for
+$t_I$ steps and, afterwards, transitions into the $R$ state.
+The SIS model is very similar and only differs in the fact that nodes return
+to the $S$ state after the infection is over, instead of transitioning to the
+$R$ state.
+
+\section{Model description}
+
 
 \bibliographystyle{plain}
 \bibliography{report}
