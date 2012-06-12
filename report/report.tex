@@ -1,0 +1,72 @@
+\documentclass{article} % For LaTeX2e
+\usepackage{nips12submit_e,times}
+%\documentstyle[nips12submit_09,times,art10]{article} % For LaTeX 2.09
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage{lmodern}
+
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{color}
+
+\newcommand{\cA}{\ensuremath{\mathcal{A}}}
+\newcommand{\cR}{\ensuremath{\mathcal{R}}}
+\newcommand{\cO}{\ensuremath{\mathcal{O}}}
+\newcommand{\smoothalpha}{$0.01$ }
+
+% argmax operator
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+\newcommand{\todo}[1]{\noindent\texttt{\color[rgb]{0.5,0.1,0.1} TODO: #1}}
+\newcommand{\class}[1]{\texttt{#1}}
+\newcommand{\file}[1]{\textbf{#1}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\function}[1]{\texttt{#1()}}
+\newcommand{\var}[1]{\textit{#1}}
+\newcommand{\option}[1]{\textit{#1}}
+\newcommand{\env}[1]{\textit{#1}}
+
+\title{Foundations of AI:\\Practical Assignment}
+
+\author{
+Alkis Gkotovos\\
+Department of Computer Science\\
+ETH Zurich\\
+\texttt{alkisg@student.ethz.ch}
+}
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to \LaTeX{} to determine where to break
+% the lines. Using \AND forces a linebreak at that point. So, if \LaTeX{}
+% puts 3 of 4 authors names on the first line, and the last on the second
+% line, try using \AND instead of \And before the third author name.
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
+
+\nipsfinalcopy % Uncomment for camera-ready version
+
+\begin{document}
+
+
+\maketitle
+
+%\begin{abstract}
+%\end{abstract}
+
+\section{Introduction}
+In this report we describe our implementation of a general learning agent,
+based on approximating the AIXI model using a combination of Monte Carlo
+Tree Search for planning and Context Tree Weighting for modelling the
+agent's environment, as described by Veness et al. in \cite{mc_aixi_ctw},
+and hereafter called MC-AIXI-CTW.
+
+\bibliographystyle{plain}
+\bibliography{report}
+
+\end{document}
