@@ -5,12 +5,13 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{textcomp}
-\usepackage{lmodern}
 \usepackage[scaled=0.8]{beramono}
 
+\usepackage{caption}
+\usepackage{subcaption}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
-\usepackage{graphicx}
+\usepackage[pdftex]{graphicx}
 \usepackage{color}
 
 \usepackage{url}
@@ -18,7 +19,9 @@
 
 \newcommand{\todo}[1]{\noindent\texttt{\color[rgb]{0.5,0.1,0.1} TODO: #1}}
 
-\title{Introduction to Social Network Analysis:\\Final Project}
+\title{Simulating disease spread in social networks\thanks{Final project
+for the course ``Introduction to Social Network Analysis'' (Spring
+Semester 2012).}}
 
 \author{
 Alkis Gkotovos\\
@@ -29,7 +32,6 @@ Department of Computer Science, ETH Zurich\\
 \nipsfinalcopy % Uncomment for camera-ready version
 
 \begin{document}
-
 
 \maketitle
 
@@ -170,6 +172,67 @@ the specified network parameter. I call this kind of plot a
 \emph{summary plot}, because it does not contain detailed information about
 the spread evolution at each iteration.
 
+\begin{figure}[tb]
+  \begin{subfigure}[b]{0.5\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/ER_graph_50_01_init}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.5\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/ER_graph_50_03_init}
+  \end{subfigure}
+  \caption{An ER(50, 0.1) network (left) and an ER(50, 0.3) network (right).}
+    \label{fig:graph_er}
+\end{figure}
+
+\begin{figure}[tb]
+  \begin{subfigure}[b]{0.5\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/ER_evo_50_03_init}
+    \caption{Initial graph state}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.5\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/ER_evo_50_03_10}
+    \caption{Graph state after 10 steps}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.5\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/ER_evo_50_03_20}
+    \caption{Graph state after 20 steps}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.5\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/ER_evo_50_03_final}
+    \caption{Final graph state}
+  \end{subfigure}
+
+  \caption{Different stages of the simulation for the ER(50, 0.3)
+    graph of Figure~\ref{fig:graph_er}.}
+    \label{fig:graph_evo_er}
+\end{figure}
+
+\begin{figure}[tb]
+  \centering
+  \includegraphics[width=0.49\textwidth]{figures/ER_evo_50_01}
+  \includegraphics[width=0.49\textwidth]{figures/ER_evo_50_03}
+  \caption{Evolution plots for the graphs of Figure~\ref{fig:graph_er}.}
+    \label{fig:evo_er1}
+\end{figure}
+
+\begin{figure}[tb]
+  \begin{subfigure}[b]{0.5\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/ER_evo_500_003}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.5\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/ER_evo_500_007}
+  \end{subfigure}
+    \caption{Evolution plots for an ER(500, 0.03) graph of (left) and an
+      ER(50, 0.03) (right).}
+    \label{fig:evo_er2}
+\end{figure}
 
 \bibliographystyle{plain}
 \bibliography{report}
