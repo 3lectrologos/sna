@@ -5,7 +5,7 @@ REPORT = report
 
 all: $(REPORT).pdf
 
-%.pdf: %.tex *.bib
+%.pdf: %.tex *.bib figures/*.pdf
 	latexmk -pdf $*
 clean:
 	@$(RM) *.aux *.lof *.log *.lot *.out *.toc *.nav *.gz *.pag *.snm *.bbl *.blg *~ \#*\# *.fdb_latexmk

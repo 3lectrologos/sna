@@ -13,12 +13,15 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import time
 import random
+import os
 import progressbar as pb
 
 NORMAL_COLOR = '#5555EE'
 CONTAM_COLOR = '#009926'
 IMMUNE_COLOR = '#E6C200'
-DEAD_COLOR = '#DDDDDD'
+DEAD_COLOR = '#BBBBBB'
+FONT_SIZE = 12
+FIG_PATH = os.getcwd() + '/report/figures/'
 
 def clamp(val, minimum=0, maximum=255):
     if val < minimum:
@@ -40,11 +43,10 @@ def colorscale(hexstr, scalefactor):
     b = clamp(b * scalefactor)
     return "#%02x%02x%02x" % (r, g, b)
 
-class Nodes(nx.MultiGraph):
+class Simr(nx.MultiGraph):
     """
     Encapsulate a graph to allow for disease spread simulation.
     """
-
     # Probability of contaminating a healthy neighbor
     P_CONTAM = 0.05
     # Time-steps for which the disease is active
@@ -54,12 +56,14 @@ class Nodes(nx.MultiGraph):
     # Probability that a node will die at each time step that it is diseased
     P_DEATH = 0.05
 
-    def __init__(self, g):
+    def __init__(self, g, pos=None):
         nx.MultiGraph.__init__(self, g)
+        self.pos = pos
         self.reset()
 
-    def __init__(self, g, k):
+    def __init__(self, g, k, pos=None):
         nx.MultiGraph.__init__(self, g)
+        self.pos = pos
         self.k = k
         self.reset()
 
@@ -69,7 +73,9 @@ class Nodes(nx.MultiGraph):
         self.immune = set()
         self.dead = set()
         self.contam_time = {}
-        self.set_contam(random.sample(self.nodes(), self.k))
+        n = len(self.nodes())
+        self.set_contam(random.sample(self.nodes(),
+                                      int(math.ceil(self.k*n))))
 
     def set_normal(self, new):
         new = set(new)
@@ -144,6 +150,38 @@ class Nodes(nx.MultiGraph):
             else:
                 self.set_normal([v])
 
+    def plot(self):
+        if self.pos == None:
+            pos = nx.circular_layout(g)
+            self.pos = nx.graphviz_layout(g)
+        NODE_SIZE = 500
+        plt.clf()
+        nx.draw_networkx_nodes(g, pos=self.pos,
+                               nodelist=g.normal,
+                               node_color=NORMAL_COLOR,
+                               node_size=NODE_SIZE)
+        nx.draw_networkx_nodes(g, pos=self.pos,
+                               nodelist=g.contam,
+                               node_color=CONTAM_COLOR,
+                               node_size=NODE_SIZE)
+        nx.draw_networkx_nodes(g, pos=self.pos,
+                               nodelist=g.immune,
+                               node_color=IMMUNE_COLOR,
+                               node_size=NODE_SIZE)
+        nx.draw_networkx_nodes(g, pos=self.pos,
+                               nodelist=g.dead,
+                               node_color=DEAD_COLOR,
+                               node_size=NODE_SIZE)
+        nx.draw_networkx_edges(g, pos=self.pos,
+                               edgelist=g.nondead_edges(),
+                               width=2,
+                               edge_color='0.2')
+        nx.draw_networkx_labels(g, pos=self.pos,
+                                font_color='0.95', font_size=11)
+        plt.gca().get_xaxis().set_visible(False)
+        plt.gca().get_yaxis().set_visible(False)
+        plt.draw()
+
     def print_summary(self):
         print 'normal :', len(self.normal)
         print 'contam :', len(self.contam)
@@ -158,33 +196,7 @@ class Nodes(nx.MultiGraph):
         ret += 'dead   : ' + str(list(self.dead)) + '\n'
         return ret
 
-def draw_network(g, pos):
-    NODE_SIZE = 500
-    plt.clf()
-    nx.draw_networkx_nodes(g, pos=pos,
-                           nodelist=g.normal,
-                           node_color=NORMAL_COLOR,
-                           node_size=NODE_SIZE)
-    nx.draw_networkx_nodes(g, pos=pos,
-                           nodelist=g.contam,
-                           node_color=CONTAM_COLOR,
-                           node_size=NODE_SIZE)
-    nx.draw_networkx_nodes(g, pos=pos,
-                           nodelist=g.immune,
-                           node_color=IMMUNE_COLOR,
-                           node_size=NODE_SIZE)
-    nx.draw_networkx_nodes(g, pos=pos,
-                           nodelist=g.dead,
-                           node_color=DEAD_COLOR,
-                           node_size=NODE_SIZE)
-    nx.draw_networkx_edges(g, pos=pos,
-                           edgelist=g.nondead_edges(),
-                           width=2,
-                           edge_color='0.2')
-    nx.draw_networkx_labels(g, pos=pos, font_color='0.95', font_size=11)
-    plt.draw()
-
-def simulate_evo(g, plot=False):
+def simulate_evo(g, save=False, savename='graph_evo', show=False, freq=100000000):
     """
     Simulate a single evolution of the disease in the given network.
     The evolution ends when there are no more diseased nodes. Return
@@ -196,6 +208,12 @@ def simulate_evo(g, plot=False):
     immune = [len(g.immune)]
     normal = [len(g.normal)]
     g.reset()
+    if save or show:
+        g.plot()
+        if save:
+            savefig(savename + '_init')
+        if show:
+            plt.show()
     while g.contam:
         g.step()
         contam.append(len(g.contam))
@@ -203,9 +221,18 @@ def simulate_evo(g, plot=False):
         immune.append(len(g.immune))
         normal.append(len(g.normal))
         its += 1
-        if plot:
-            draw_network(g, pos)
-            time.sleep(1)
+        if its % freq == 0 and (save or show):
+            g.plot()
+            if save:
+                savefig(savename + '_' + str(its))
+            if show:
+                plt.show()
+    if its % freq != 0 and (save or show):
+        g.plot()
+        if save:
+            savefig(savename + '_final')
+        if show:
+            plt.show()
     return {'its': its,
             'nodes': len(g.nodes()),
             'contam': contam,
@@ -236,8 +263,8 @@ def simulate(g, niter, plot=False):
             mc = max(mc, len(g.contam))
             j += 1
             if plot:
-                draw_network(g, pos)
-                time.sleep(1)
+                g.plot()
+                plt.show()
         its.append(j)
         dead.append(len(g.dead))
         immune.append(len(g.immune))
@@ -252,15 +279,21 @@ def simulate(g, niter, plot=False):
 
 def plot_evo(data):
     """
-    Create line plot depicting a single network evolution.
+    Create line plot using data returned by ``simulate_evo``.
     """
     its = data['its']
     nodes = data['nodes']
-    contam = [(1.0*d)/nodes for d in data['contam']]
-    dead = [(1.0*d)/nodes for d in data['dead']]
-    immune = [(1.0*d)/nodes for d in data['immune']]
-    normal = [(1.0*d)/nodes for d in data['normal']]
+    contam = [(100.0*d)/nodes for d in data['contam']]
+    dead = [(100.0*d)/nodes for d in data['dead']]
+    immune = [(100.0*d)/nodes for d in data['immune']]
+    normal = [(100.0*d)/nodes for d in data['normal']]
     legitems = []
+    plt.clf()
+    p = plt.plot(normal, linestyle='-', marker='o', linewidth=2,
+                 markeredgecolor=colorscale(NORMAL_COLOR, 0.4),
+                 markersize=6,
+                 color=NORMAL_COLOR)
+    legitems.append(p)
     p = plt.plot(contam, linestyle='-', marker='o', linewidth=2,
                  markeredgecolor=colorscale(CONTAM_COLOR, 0.2),
                  markersize=6,
@@ -276,15 +309,13 @@ def plot_evo(data):
                  markersize=6,
                  color=IMMUNE_COLOR)
     legitems.append(p)
-    p = plt.plot(normal, linestyle='-', marker='o', linewidth=2,
-                 markeredgecolor=colorscale(NORMAL_COLOR, 0.4),
-                 markersize=6,
-                 color=NORMAL_COLOR)
-    legitems.append(p)
     plt.xlim([0, its])
-    plt.ylim([0, 1])
-    plt.legend(legitems, ['contaminated %', 'dead %', 'immune %', 'normal %'], 1)
-    plt.show()
+    plt.ylim([0, 100])
+    plt.xlabel('Time step')
+    plt.ylabel('Node percentage')
+    add_legend(legitems,
+               ['healthy %', 'contaminated %', 'removed %', 'immune %'],
+               1)
 
 def average_data(data):
     """
@@ -295,17 +326,17 @@ def average_data(data):
     its_mean = numpy.average(its)
     its_std = math.sqrt(numpy.var(its))
     dead = data['dead']
-    dead_mean = 1.0*numpy.average(dead)/numnodes
-    dead_std = 1.0*math.sqrt(numpy.var(dead))/numnodes
+    dead_mean = 100.0*numpy.average(dead)/numnodes
+    dead_std = 100.0*math.sqrt(numpy.var(dead))/numnodes
     immune = data['immune']
-    immune_mean = 1.0*numpy.average(immune)/numnodes
-    immune_std = 1.0*math.sqrt(numpy.var(immune))/numnodes
+    immune_mean = 100.0*numpy.average(immune)/numnodes
+    immune_std = 100.0*math.sqrt(numpy.var(immune))/numnodes
     max_contam = data['max_contam']
-    max_contam_mean = 1.0*numpy.average(max_contam)/numnodes
-    max_contam_std = 1.0*math.sqrt(numpy.var(max_contam))/numnodes
+    max_contam_mean = 100.0*numpy.average(max_contam)/numnodes
+    max_contam_std = 100.0*math.sqrt(numpy.var(max_contam))/numnodes
     normal = data['normal']
-    normal_mean = 1.0*numpy.average(normal)/numnodes
-    normal_std = 1.0*math.sqrt(numpy.var(normal))/numnodes
+    normal_mean = 100.0*numpy.average(normal)/numnodes
+    normal_std = 100.0*math.sqrt(numpy.var(normal))/numnodes
     return {'its': (its_mean, its_std),
             'nodes': numnodes,
             'dead': (dead_mean, dead_std),
@@ -331,21 +362,27 @@ def plot_range(data, xlabel='x', ylabel='y'):
     vals = data['vals']
     data = data['data']
     dead = [r['dead'][0] for r in data]
+    dead_std = [r['dead'][1] for r in data]
     immune = [r['immune'][0] for r in data]
+    immune_std = [r['immune'][1] for r in data]
     max_contam = [r['max_contam'][0] for r in data]
+    max_contam_std = [r['max_contam'][1] for r in data]
     legitems = []
-    p = plt.plot(vals, max_contam, linestyle='-', marker='o', linewidth=2,
+    plt.clf()
+    p = plt.errorbar(vals, max_contam, yerr=max_contam_std,
+                 linestyle='-', marker='o', linewidth=2,
                  markeredgecolor=colorscale(CONTAM_COLOR, 0.2),
                  markersize=6,
                  color=CONTAM_COLOR)
     legitems.append(p)
-    p = plt.plot(vals, dead, linestyle='-', marker='o', linewidth=2,
-                 markeredgecolor=colorscale(DEAD_COLOR, 0.1),
-                 markersize=6,
-                 color=colorscale(DEAD_COLOR, 0.7))
+    p = plt.errorbar(vals, dead, yerr=dead_std,
+                     linestyle='-', marker='o', linewidth=2,
+                     markeredgecolor=colorscale(DEAD_COLOR, 0.1),
+                     markersize=6,
+                     color=colorscale(DEAD_COLOR, 0.7))
     legitems.append(p)
-    print dead
-    p = plt.plot(vals, immune, linestyle='-', marker='o', linewidth=2,
+    p = plt.errorbar(vals, immune, yerr=immune_std,
+                 linestyle='-', marker='o', linewidth=2,
                  markeredgecolor=colorscale(IMMUNE_COLOR, 0.4),
                  markersize=6,
                  color=IMMUNE_COLOR)
@@ -355,34 +392,67 @@ def plot_range(data, xlabel='x', ylabel='y'):
     #             markersize=6,
     #             color=NORMAL_COLOR)
     #legitems.append(p)
-    #plt.xlim([0, vals])
-    plt.ylim([0, 1])
-    plt.legend(legitems, ['max. contam. %', 'dead %', 'immune %'], 1)
-    plt.show()
+    plt.xlim([0, vals])
+    plt.ylim([0, 100])
+    add_legend(legitems, ['max. contam. %', 'dead %', 'immune %'], 4)
+    #plt.show()
+
+def add_legend(legitems, strings, pos):
+    plt.legend(legitems, strings, pos)
+    leg = plt.gca().get_legend()
+    ltext  = leg.get_texts()
+    llines = leg.get_lines()
+    frame  = leg.get_frame()
+    frame.set_facecolor('1.0')
+    plt.setp(ltext, fontsize=FONT_SIZE)
+    plt.setp(llines, linewidth=1.0)
+
+def savefig(outfile):
+    """
+    Save current figure to file.
+    """
+    # General font size
+    font = {'family': 'sans', 'weight': 'normal', 'size': FONT_SIZE}
+    plt.rc('font', **font)
+    # Adjust size
+    plt.gcf().set_size_inches(8, 6)
+    # Save
+    outfile = FIG_PATH + outfile
+    plt.savefig(outfile + '.pdf', format='pdf', bbox_inches='tight')
 
 if __name__=="__main__":
-    gfun = lambda n: Nodes(nx.barabasi_albert_graph(100, n), k=3)
-    res = simulate_range(gfun, [2, 3, 4, 5, 10, 15, 20, 25, 30], 10000)
-    plot_range(res)
-    #g = Nodes(nx.erdos_renyi_graph(100, 0.9))
-    #g = Nodes(nx.watts_strogatz_graph(100, 30, 0.8))
-    #g = Nodes(nx.barabasi_albert_graph(10000, 5))
-    #pos = nx.spring_layout(g, iterations=100)
-    #plt.ion()
+    # ER evolution plots
+    g = Simr(nx.erdos_renyi_graph(50, 0.1), k=0)
+    res = simulate_evo(g, save=True, savename='ER_graph_50_01')
+    plt.close()
+    g = Simr(nx.erdos_renyi_graph(50, 0.3), k=0)
+    res = simulate_evo(g, save=True, savename='ER_graph_50_03')
+    plt.close()
 
-    #res = simulate_evo(g, plot=False)
-    #plot_evo(res)
+    g = Simr(nx.erdos_renyi_graph(50, 0.1), k=0.05)
+    res = simulate_evo(g)
+    plot_evo(res)
+    savefig('ER_evo_50_01')
+    g = Simr(nx.erdos_renyi_graph(50, 0.3), k=0.05)
+    res = simulate_evo(g, save=True, savename='ER_evo_50_03', freq=10)
+    plt.close()
+    plot_evo(res)
+    savefig('ER_evo_50_03')
 
-    #nsim = 1000
-    #res = simulate(g, nsim, plot=True)
-    #numnodes = len(g.nodes())
-    
-    #NAME = 'Erdos-Renyi (100, 0.3)'
-    #header = NAME + ' (' + str(nsim) + ' simulations)'
-    #print header
-    #print len(header)*'-'
- 
-    #print 'avg. its      :', its_avg, '(' + str(its_std) + ')'
-    #print 'avg. dead   % :', dead_avg, '(' + str(dead_std) + ')'
-    #print 'avg. immune % :', immune_avg, '(' + str(immune_std) + ')'
-    #print 'avg. normal % :', normal_avg, '(' + str(normal_std) + ')'
+    g = Simr(nx.erdos_renyi_graph(500, 0.03), k=0.05)
+    res = simulate_evo(g)
+    plot_evo(res)
+    savefig('ER_evo_500_001')
+    g = Simr(nx.erdos_renyi_graph(500, 0.07), k=0.05)
+    res = simulate_evo(g)
+    plot_evo(res)
+    savefig('ER_evo_500_007')
+
+    #gfun = lambda p: Simr(nx.erdos_renyi_graph(100, p), k=0.05)
+    #res = simulate_range(gfun, numpy.linspace(0, 1, 20), 100)
+    #plot_range(res)
+    #savefig('ER_sum_100_p_100.pdf')
+    #gfun = lambda p: Simr(nx.erdos_renyi_graph(1000, p), k=3)
+    #res = simulate_range(gfun, numpy.linspace(0, 1, 20), 1)
+    #plot_range(res)
+    #savefig('ER_sum_1000_p_100.pdf')
