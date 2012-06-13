@@ -99,11 +99,23 @@ or otherwise returns to the $S$ state. The $M$ state is the same with the $R$
 state from an operational perspective, but is semantically different.
 \end{itemize}
 
-\section{Simulation}
-In this section I first present three popular types of randomly generated
-networks and briefly discuss their characteristics. Then, I use generated
-graphs from these classes to simulate the SIMR model for various combinations
-of graph and SIMR parameters.
+\section{Implementation and experimental setup}
+The model presented in the previous section can be easily implemented in any
+programming language with graph support. To simulate the model, I chose to use
+three popular classes of randomly generated networks whose characteristics
+I briefly review below.
+
+\subsection{Implementation}
+I implemented the SIMR model in Python using
+the NetworkX~\footnote{\url{http://networkx.lanl.gov/}} library for graph
+generation and manipulation. In short, my class \texttt{Simr} encapsulates the
+disease spread model by storing the four model parameters $p_I$, $t_I$, $p_R$
+and $p_M$, keeping track of the state of each node, and updating the node state
+at each time step accordingly. In addition, I have
+written code for visualizing the network state and automatically running
+and plotting multiple simulations. The Python module \texttt{diffuse.py}
+containing all code written for this project can be found on
+GitHub~\footnote{\url{https://github.com/3lectrologos/sna}}.
 
 \subsection{Random graph models}
 \noindent\textbf{Erdős–Rényi model.} The Erdős–Rényi (ER) model~\cite{erdos} is
@@ -138,6 +150,26 @@ accumulate a lot of edges, which is expected to play a role in disease spread
 (for example, removing a few large hubs from the network might make a huge
 difference). I will refer to a generated graph of this class
 as BA$(n, m)$.
+
+\subsection{Types of experiments}
+To obtain the results in the following section, two types of simulations are
+used. The first consists in simulating the network only once, starting with
+a specified number (or percentage) of infected nodes and terminating as soon as
+there are no more infected nodes, which means that the system has reached a
+fixed point. For this type of simulation, I plot the percentage of healthy,
+infected, immune, and dead nodes as function of time steps and call it an
+\emph{evolution plot}, because it depicts the evolution of a single disease
+spread scenario as time passes.
+
+The second type of simulation consists in carrying out a number of iterations
+of the above procedure for a number of different values of a specific network
+parameter. In this case, I plot the average of the healthy, infected,
+and immune node percentages at the end of each iteration, as well as the average
+of the maximum infected node percentage during each iteration, as a function of
+the specified network parameter. I call this kind of plot a
+\emph{summary plot}, because it does not contain detailed information about
+the spread evolution at each iteration.
+
 
 \bibliographystyle{plain}
 \bibliography{report}
