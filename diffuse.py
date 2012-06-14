@@ -14,6 +14,8 @@ import matplotlib.pyplot as plt
 import time
 import random
 import os
+import re
+import operator
 import progressbar as pb
 
 NORMAL_COLOR = '#5555EE'
@@ -43,7 +45,7 @@ def colorscale(hexstr, scalefactor):
     b = clamp(b * scalefactor)
     return "#%02x%02x%02x" % (r, g, b)
 
-class Simr(nx.MultiGraph):
+class Simr(nx.Graph):
     """
     Encapsulate a graph to allow for disease spread simulation.
     """
@@ -55,14 +57,31 @@ class Simr(nx.MultiGraph):
     P_IMMUNITY = 0.2
     # Probability that a node will die at each time step that it is diseased
     P_DEATH = 0.05
+    # Change this for starting with given immune nodes
+    init_immune = []
 
-    def __init__(self, g, pos=None):
-        nx.MultiGraph.__init__(self, g)
+    # Initialize with the given graph
+    def __init__(self, g, k=0.05, pos=None):
+        nx.Graph.__init__(self, g)
+        self.gtype = 'UNK'
+        self.gparam = []
         self.pos = pos
+        self.k = k
         self.reset()
 
-    def __init__(self, g, k, pos=None):
-        nx.MultiGraph.__init__(self, g)
+    # Initialize with a generated graph of three classes
+    def __init__(self, gtype='ER', gparam=[100, 0.1], k=0.05, pos=None):
+        if gtype == 'ER':
+            g = nx.erdos_renyi_graph(*gparam)
+        elif gtype == 'WS':
+            g = nx.watts_strogatz_graph(*gparam)
+        elif gtype == 'BA':
+            g = nx.barabasi_albert_graph(*gparam)
+        else:
+            raise Exception("Unknown graph model type.")
+        nx.Graph.__init__(self, g)
+        self.gtype = gtype
+        self.gparam = gparam
         self.pos = pos
         self.k = k
         self.reset()
@@ -76,6 +95,7 @@ class Simr(nx.MultiGraph):
         n = len(self.nodes())
         self.set_contam(random.sample(self.nodes(),
                                       int(math.ceil(self.k*n))))
+        self.set_immune(self.init_immune)
 
     def set_normal(self, new):
         new = set(new)
@@ -152,31 +172,30 @@ class Simr(nx.MultiGraph):
 
     def plot(self):
         if self.pos == None:
-            pos = nx.circular_layout(g)
-            self.pos = nx.graphviz_layout(g)
+            self.pos = nx.graphviz_layout(self)
         NODE_SIZE = 500
         plt.clf()
-        nx.draw_networkx_nodes(g, pos=self.pos,
-                               nodelist=g.normal,
+        nx.draw_networkx_nodes(self, pos=self.pos,
+                               nodelist=self.normal,
                                node_color=NORMAL_COLOR,
                                node_size=NODE_SIZE)
-        nx.draw_networkx_nodes(g, pos=self.pos,
-                               nodelist=g.contam,
+        nx.draw_networkx_nodes(self, pos=self.pos,
+                               nodelist=self.contam,
                                node_color=CONTAM_COLOR,
                                node_size=NODE_SIZE)
-        nx.draw_networkx_nodes(g, pos=self.pos,
-                               nodelist=g.immune,
+        nx.draw_networkx_nodes(self, pos=self.pos,
+                               nodelist=self.immune,
                                node_color=IMMUNE_COLOR,
                                node_size=NODE_SIZE)
-        nx.draw_networkx_nodes(g, pos=self.pos,
-                               nodelist=g.dead,
+        nx.draw_networkx_nodes(self, pos=self.pos,
+                               nodelist=self.dead,
                                node_color=DEAD_COLOR,
                                node_size=NODE_SIZE)
-        nx.draw_networkx_edges(g, pos=self.pos,
-                               edgelist=g.nondead_edges(),
+        nx.draw_networkx_edges(self, pos=self.pos,
+                               edgelist=self.nondead_edges(),
                                width=2,
                                edge_color='0.2')
-        nx.draw_networkx_labels(g, pos=self.pos,
+        nx.draw_networkx_labels(self, pos=self.pos,
                                 font_color='0.95', font_size=11)
         plt.gca().get_xaxis().set_visible(False)
         plt.gca().get_yaxis().set_visible(False)
@@ -188,6 +207,28 @@ class Simr(nx.MultiGraph):
         print 'immune :', len(self.immune)
         print 'dead   :', len(self.dead)
 
+    def graph_type(self):
+        res = self.gtype + '('
+        for i in range(len(self.gparam) - 1):
+            res += str(self.gparam[i]) + ', '
+        res += str(self.gparam[-1]) + ')'
+        return res
+
+    def graph_name(self):
+        res = self.gtype + '_'
+        for i in range(len(self.gparam) - 1):
+            res += str(self.gparam[i]) + '_'
+        res += str(self.gparam[-1])
+        res = re.sub('\.', '', res)
+        return res
+
+    def print_graph_info(self):
+        ac = nx.average_clustering(self)
+        ap = nx.average_shortest_path_length(self)
+        print self.graph_type()
+        print 'Avg. clustering =', ac
+        print 'Avg. short. path len. =', ap
+
     def __str__(self):
         ret = ''
         ret += 'normal : ' + str(list(self.normal)) + '\n'
@@ -196,7 +237,7 @@ class Simr(nx.MultiGraph):
         ret += 'dead   : ' + str(list(self.dead)) + '\n'
         return ret
 
-def simulate_evo(g, save=False, savename='graph_evo', show=False, freq=100000000):
+def simulate_evo(g, save=False, savename='graph_evo', show=False, freq=10**8):
     """
     Simulate a single evolution of the disease in the given network.
     The evolution ends when there are no more diseased nodes. Return
@@ -227,7 +268,7 @@ def simulate_evo(g, save=False, savename='graph_evo', show=False, freq=100000000
                 savefig(savename + '_' + str(its))
             if show:
                 plt.show()
-    if its % freq != 0 and (save or show):
+    if save or show:
         g.plot()
         if save:
             savefig(savename + '_final')
@@ -251,10 +292,7 @@ def simulate(g, niter, plot=False):
     immune = []
     max_contam = []
     normal = []
-    it = 0
-    widgets = [pb.Bar('>'), ' ', pb.ETA(), ' ', pb.ReverseBar('<')]
-    progress = pb.ProgressBar(widgets=widgets)
-    for it in progress(range(niter)):
+    for it in range(niter):
         g.reset()
         mc = 0
         j = 0
@@ -314,7 +352,7 @@ def plot_evo(data):
     plt.xlabel('Time step')
     plt.ylabel('Node percentage')
     add_legend(legitems,
-               ['healthy %', 'contaminated %', 'removed %', 'immune %'],
+               ['healthy', 'infected', 'removed', 'immune'],
                1)
 
 def average_data(data):
@@ -349,13 +387,15 @@ def simulate_range(gfun, vals, niter):
     Simulate disease evolution for a range of different values of a parameter.
     """
     data = []
-    for val in vals:
+    widgets = [pb.Bar('>'), ' ', pb.ETA(), ' ', pb.ReverseBar('<')]
+    progress = pb.ProgressBar(widgets=widgets)
+    for val in progress(vals):
         g = gfun(val)
         r = simulate(g, niter)
         data.append(average_data(r))
     return {'vals': vals, 'data': data}
 
-def plot_range(data, xlabel='x', ylabel='y'):
+def plot_range(data, xlabel='x', ylabel='Average node percentage'):
     """
     Plot network evolution data returned by ``simulate_range``.
     """
@@ -387,15 +427,11 @@ def plot_range(data, xlabel='x', ylabel='y'):
                  markersize=6,
                  color=IMMUNE_COLOR)
     legitems.append(p)
-    #p = plt.plot(normal, linestyle='-', marker='o', linewidth=2,
-    #             markeredgecolor=colorscale(NORMAL_COLOR, 0.4),
-    #             markersize=6,
-    #             color=NORMAL_COLOR)
-    #legitems.append(p)
-    plt.xlim([0, vals])
+    plt.xlim([0, vals[-1]])
     plt.ylim([0, 100])
-    add_legend(legitems, ['max. contam. %', 'dead %', 'immune %'], 4)
-    #plt.show()
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    add_legend(legitems, ['max. infected', 'dead', 'immune'], 4)
 
 def add_legend(legitems, strings, pos):
     plt.legend(legitems, strings, pos)
@@ -418,41 +454,119 @@ def savefig(outfile):
     plt.gcf().set_size_inches(8, 6)
     # Save
     outfile = FIG_PATH + outfile
-    plt.savefig(outfile + '.pdf', format='pdf', bbox_inches='tight')
+    plt.savefig(outfile + '.pdf', format='pdf', bbox_inches='tight') 
+
+def gen_er_plots():
+    # ER graph state evolution plots
+    g = Simr(gtype='ER', gparam=[50, 0.3], k=0.05)
+    g.k = 0.05
+    res = simulate_evo(g, save=True, savename='evo_' + g.graph_name(), freq=10)
+    plt.close()
+
+    # ER evolution plots
+    g3 = Simr(gtype='ER', gparam=[500, 0.015], k=0.05)
+    g3.print_graph_info()
+    res = simulate_evo(g3)
+    plot_evo(res)
+    savefig('evo_' + g3.graph_name())
+    g4 = Simr(gtype='ER', gparam=[500, 0.03], k=0.05)
+    g4.print_graph_info()
+    res = simulate_evo(g4)
+    plot_evo(res)
+    savefig('evo_' + g4.graph_name())
+
+    # ER summary plots
+    NITER = 2
+    gfun = lambda p: Simr(gtype='ER', gparam=[50, p], k=0.05)
+    res = simulate_range(gfun, numpy.linspace(0, 0.8, 20), NITER)
+    plot_range(res, xlabel='p')
+    savefig('sum_ER_50_p')
+
+    gfun = lambda p: Simr(gtype='ER', gparam=[500, p], k=0.05)
+    res = simulate_range(gfun, numpy.linspace(0, 0.2, 20), NITER)
+    plot_range(res, xlabel='p')
+    savefig('sum_ER_500_p')
+
+def gen_ws_plots():
+    # WS evolution plots
+    g3 = Simr(gtype='WS', gparam=[500, 15, 0.1], k=0.05)
+    g3.print_graph_info()
+    res = simulate_evo(g3)
+    plot_evo(res)
+    savefig('evo_' + g3.graph_name())
+    g4 = Simr(gtype='WS', gparam=[500, 30, 0.1], k=0.05)
+    g4.print_graph_info()
+    res = simulate_evo(g4)
+    plot_evo(res)
+    savefig('evo_' + g4.graph_name())
+
+    # WS summary plots
+    NITER = 2
+    gfun = lambda p: Simr(gtype='WS', gparam=[500, 30, p], k=0.05)
+    res = simulate_range(gfun, numpy.linspace(0, 1, 20), NITER)
+    plot_range(res, xlabel='p')
+    savefig('sum_WS_500_25_p')
+    gfun = lambda k: Simr(gtype='WS', gparam=[500, k, 0.1], k=0.05)
+    res = simulate_range(gfun, range(3, 40), NITER)
+    plot_range(res, xlabel='k')
+    savefig('sum_WS_500_k_01')
+
+def gen_ba_plots():
+    # BA evolution plots
+    g = Simr(gtype='BA', gparam=[500, 3], k=0.05)
+    g.print_graph_info()
+    res = simulate_evo(g)
+    plot_evo(res)
+    savefig('evo_' + g.graph_name())
+    g = Simr(gtype='BA', gparam=[500, 7], k=0.05)
+    g.print_graph_info()
+    res = simulate_evo(g)
+    plot_evo(res)
+    savefig('evo_' + g.graph_name())
+
+    # BA summary plots
+    NITER = 2
+    gfun = lambda p: Simr(gtype='BA', gparam=[500, p], k=0.05)
+    res = simulate_range(gfun, range(1, 25), NITER)
+    plot_range(res, xlabel='m')
+    savefig('sum_BA_500_m')
+
+def rm_hubs(g, n):
+    """
+    Make ``n'' nodes with the largest closeness centrality immune.
+    """
+    c = nx.closeness_centrality(g)
+    s = sorted(c.iteritems(), key=operator.itemgetter(1), reverse=True)
+    hubs = [h[0] for h in s[:n]]
+    g.init_immune = hubs
+    return g
+
+def gen_rmhubs_plots():
+    NITER = 10
+    # ER
+    gfun = lambda n: rm_hubs(Simr(gtype='ER', gparam=[500, 0.05], k=0.05), n)
+    res = simulate_range(gfun, range(0, 31, 3), NITER)
+    plot_range(res, xlabel='Number of removed nodes')
+    savefig('hubs_ER_500_005')
+
+    # WS
+    gfun = lambda n: rm_hubs(Simr(gtype='WS', gparam=[500, 29, 0.1], k=0.05), n)
+    res = simulate_range(gfun, range(0, 31, 3), NITER)
+    plot_range(res, xlabel='Number of removed nodes')
+    savefig('hubs_WS_500_29_01')
+
+    # BA
+    gfun = lambda n: rm_hubs(Simr(gtype='BA', gparam=[500, 13], k=0.05), n)
+    res = simulate_range(gfun, range(0, 31, 3), NITER)
+    plot_range(res, xlabel='Number of removed nodes')
+    savefig('hubs_BA_500_13')
 
 if __name__=="__main__":
-    # ER evolution plots
-    g = Simr(nx.erdos_renyi_graph(50, 0.1), k=0)
-    res = simulate_evo(g, save=True, savename='ER_graph_50_01')
-    plt.close()
-    g = Simr(nx.erdos_renyi_graph(50, 0.3), k=0)
-    res = simulate_evo(g, save=True, savename='ER_graph_50_03')
-    plt.close()
-
-    g = Simr(nx.erdos_renyi_graph(50, 0.1), k=0.05)
-    res = simulate_evo(g)
-    plot_evo(res)
-    savefig('ER_evo_50_01')
-    g = Simr(nx.erdos_renyi_graph(50, 0.3), k=0.05)
-    res = simulate_evo(g, save=True, savename='ER_evo_50_03', freq=10)
-    plt.close()
-    plot_evo(res)
-    savefig('ER_evo_50_03')
-
-    g = Simr(nx.erdos_renyi_graph(500, 0.03), k=0.05)
-    res = simulate_evo(g)
-    plot_evo(res)
-    savefig('ER_evo_500_001')
-    g = Simr(nx.erdos_renyi_graph(500, 0.07), k=0.05)
-    res = simulate_evo(g)
-    plot_evo(res)
-    savefig('ER_evo_500_007')
-
-    #gfun = lambda p: Simr(nx.erdos_renyi_graph(100, p), k=0.05)
-    #res = simulate_range(gfun, numpy.linspace(0, 1, 20), 100)
-    #plot_range(res)
-    #savefig('ER_sum_100_p_100.pdf')
-    #gfun = lambda p: Simr(nx.erdos_renyi_graph(1000, p), k=3)
-    #res = simulate_range(gfun, numpy.linspace(0, 1, 20), 1)
-    #plot_range(res)
-    #savefig('ER_sum_1000_p_100.pdf')
+    # ER plots
+    gen_er_plots()
+    # WS plots
+    gen_ws_plots()
+    # BA plots
+    gen_ba_plots()
+    # Removed hubs plots
+    gen_rmhubs_plots()

@@ -9,7 +9,10 @@
 
 \usepackage{caption}
 \usepackage{subcaption}
+\usepackage{wrapfig}
 \usepackage{amsmath,amssymb}
+\usepackage{array}
+\usepackage{tabularx}
 \usepackage{booktabs}
 \usepackage[pdftex]{graphicx}
 \usepackage{color}
@@ -172,66 +175,156 @@ the specified network parameter. I call this kind of plot a
 \emph{summary plot}, because it does not contain detailed information about
 the spread evolution at each iteration.
 
-\begin{figure}[tb]
-  \begin{subfigure}[b]{0.5\textwidth}
-    \centering
-    \includegraphics[width=\textwidth]{figures/ER_graph_50_01_init}
-  \end{subfigure}
-  \begin{subfigure}[b]{0.5\textwidth}
-    \centering
-    \includegraphics[width=\textwidth]{figures/ER_graph_50_03_init}
-  \end{subfigure}
-  \caption{An ER(50, 0.1) network (left) and an ER(50, 0.3) network (right).}
-    \label{fig:graph_er}
-\end{figure}
+\begin{table}[t]
+  \centering
+  \caption{Graph measures of the graphs used in the simulations.}
+  \label{tab:preb_time}
+  \begin{tabularx}{\textwidth}{l  *{6}{>{\centering\arraybackslash}X}}
+    \toprule
+    \textbf{Graph} & \textbf{Avg. clustering coeff.} & \textbf{Avg. shortest path length}\\
+    \midrule
+    ER(500, 0.015) & 0.016 & 3.29\\
+    \midrule
+    ER(500, 0.030) & 0.032 & 2.60\\
+    \midrule
+    WS(500, 15, 0.1) & 0.510 & 3.30\\
+    \midrule
+    WS(500, 30, 0.1) & 0.540 & 2.55\\
+    \midrule
+    BA(500, 3) & 0.046 & 3.23\\
+    \midrule
+    BA(500, 7) & 0.081 & 2.56\\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+%\begin{figure}[tb]
+%  \begin{subfigure}[b]{0.5\textwidth}
+%    \centering
+%    \includegraphics[width=\textwidth]{figures/graph_ER_50_01_init}
+%  \end{subfigure}
+%  \begin{subfigure}[b]{0.5\textwidth}
+%    \centering
+%    \includegraphics[width=\textwidth]{figures/graph_ER_50_03_init}
+%  \end{subfigure}
+%  \caption{An ER(50, 0.1) graph (left) and an ER(50, 0.3) graph (right).}
+%  \label{fig:er_graph}
+%\end{figure}
 
 \begin{figure}[tb]
   \begin{subfigure}[b]{0.5\textwidth}
     \centering
-    \includegraphics[width=\textwidth]{figures/ER_evo_50_03_init}
+    \includegraphics[width=\textwidth]{figures/evo_ER_50_03_init}
     \caption{Initial graph state}
   \end{subfigure}
   \begin{subfigure}[b]{0.5\textwidth}
     \centering
-    \includegraphics[width=\textwidth]{figures/ER_evo_50_03_10}
+    \includegraphics[width=\textwidth]{figures/evo_ER_50_03_10}
     \caption{Graph state after 10 steps}
   \end{subfigure}
   \begin{subfigure}[b]{0.5\textwidth}
     \centering
-    \includegraphics[width=\textwidth]{figures/ER_evo_50_03_20}
+    \includegraphics[width=\textwidth]{figures/evo_ER_50_03_20}
     \caption{Graph state after 20 steps}
   \end{subfigure}
   \begin{subfigure}[b]{0.5\textwidth}
     \centering
-    \includegraphics[width=\textwidth]{figures/ER_evo_50_03_final}
+    \includegraphics[width=\textwidth]{figures/evo_ER_50_03_final}
     \caption{Final graph state}
   \end{subfigure}
-
-  \caption{Different stages of the simulation for the ER(50, 0.3)
-    graph of Figure~\ref{fig:graph_er}.}
-    \label{fig:graph_evo_er}
+  \caption{Different stages of the simulation for an ER(50, 0.3) graph.}
+  \label{fig:er_graph_evo}
 \end{figure}
 
 \begin{figure}[tb]
+  \begin{subfigure}[b]{0.5\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/evo_ER_500_0015}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.5\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/evo_ER_500_003}
+  \end{subfigure}
+  \caption{Evolution plots for an ER(500, 0.015) graph (left) and an
+    ER(500, 0.03) graph (right).}
+  \label{fig:er_evo}
+\end{figure}
+
+\begin{wrapfigure}{R}{0.5\textwidth}
   \centering
-  \includegraphics[width=0.49\textwidth]{figures/ER_evo_50_01}
-  \includegraphics[width=0.49\textwidth]{figures/ER_evo_50_03}
-  \caption{Evolution plots for the graphs of Figure~\ref{fig:graph_er}.}
-    \label{fig:evo_er1}
+  \includegraphics[width=0.5\textwidth]{figures/sum_ER_500_p}
+  \caption{Summary plot for ER(500, p) graphs (100 simulations).}
+  \label{fig:er_sum}
+\end{wrapfigure}
+
+\begin{figure}[tb]
+  \begin{subfigure}[b]{0.5\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/evo_WS_500_15_01}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.5\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/evo_WS_500_30_01}
+  \end{subfigure}
+  \caption{Evolution plots for a WS(500, 20, 0.1) graph (left) and a
+    WS(500, 40, 0.1) graph (right).}
+  \label{fig:ws_evo}
 \end{figure}
 
 \begin{figure}[tb]
   \begin{subfigure}[b]{0.5\textwidth}
     \centering
-    \includegraphics[width=\textwidth]{figures/ER_evo_500_003}
+    \includegraphics[width=\textwidth]{figures/sum_WS_500_25_p}
   \end{subfigure}
   \begin{subfigure}[b]{0.5\textwidth}
     \centering
-    \includegraphics[width=\textwidth]{figures/ER_evo_500_007}
+    \includegraphics[width=\textwidth]{figures/sum_WS_500_k_01}
   \end{subfigure}
-    \caption{Evolution plots for an ER(500, 0.03) graph of (left) and an
-      ER(50, 0.03) (right).}
-    \label{fig:evo_er2}
+  \caption{Summary plots for WS(500, 25, p) graphs (left) and
+    WS(500, k, 0.1) graphs (right) for (100 simulations).}
+  \label{fig:ws_sum}
+\end{figure}
+
+\begin{figure}[tb]
+  \begin{subfigure}[b]{0.5\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/evo_BA_500_3}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.5\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/evo_BA_500_7}
+  \end{subfigure}
+  \caption{Evolution plots for a BA(500, 3) graph (left) and a
+    BA(500, 7) graph (right).}
+  \label{fig:ba_evo}
+\end{figure}
+
+\begin{wrapfigure}{R}{0.5\textwidth}
+  \centering
+  \includegraphics[width=0.5\textwidth]{figures/sum_BA_500_m}
+  \caption{Summary plot for BA(500, m) graphs (100 simulations).}
+  \label{fig:ba_sum}
+\end{wrapfigure}
+
+\begin{figure}[tb]
+  \begin{subfigure}[b]{0.5\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/hubs_ER_500_005}
+    \caption{ER(500, 0.05) graph}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.5\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/hubs_WS_500_29_01}
+    \caption{WS(500, 29) graph}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.5\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/hubs_BA_500_13}
+    \caption{BA(500, 13) graph}
+  \end{subfigure}
+  \caption{Summary plots when a number of nodes with the highest
+    closeness centrality scores are immune.}
+  \label{fig:ba_evo}
 \end{figure}
 
 \bibliographystyle{plain}
