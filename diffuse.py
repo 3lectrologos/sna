@@ -414,19 +414,19 @@ def plot_range(data, xlabel='x', ylabel='Average node percentage'):
                  markeredgecolor=colorscale(CONTAM_COLOR, 0.2),
                  markersize=6,
                  color=CONTAM_COLOR)
-    legitems.append(p)
+    legitems.append(p[0])
     p = plt.errorbar(vals, dead, yerr=dead_std,
                      linestyle='-', marker='o', linewidth=2,
                      markeredgecolor=colorscale(DEAD_COLOR, 0.1),
                      markersize=6,
                      color=colorscale(DEAD_COLOR, 0.7))
-    legitems.append(p)
+    legitems.append(p[0])
     p = plt.errorbar(vals, immune, yerr=immune_std,
                  linestyle='-', marker='o', linewidth=2,
                  markeredgecolor=colorscale(IMMUNE_COLOR, 0.4),
                  markersize=6,
                  color=IMMUNE_COLOR)
-    legitems.append(p)
+    legitems.append(p[0])
     plt.xlim([0, vals[-1]])
     plt.ylim([0, 100])
     plt.xlabel(xlabel)
