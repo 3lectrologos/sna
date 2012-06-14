@@ -431,7 +431,7 @@ def plot_range(data, xlabel='x', ylabel='Average node percentage'):
     plt.ylim([0, 100])
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    add_legend(legitems, ['max. infected', 'dead', 'immune'], 4)
+    add_legend(legitems, ['max. infected', 'removed', 'immune'], 4)
 
 def add_legend(legitems, strings, pos):
     plt.legend(legitems, strings, pos)
