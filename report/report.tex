@@ -41,8 +41,8 @@ Department of Computer Science, ETH Zurich\\
 \begin{abstract}
 In this report I present a model, similar to the common SIR and SIS models,
 which can be used to simulate the spread of an infectious disease in
-social networks. I also present and discuss simulation results on several
-kinds of generated networks for different choices of model and graph parameters.
+social networks. I also present and discuss simulation results on three
+types of generated networks for different choices of graph parameters.
 \end{abstract}
 
 \section{Introduction}
@@ -104,22 +104,27 @@ or otherwise returns to the $S$ state. The $M$ state is the same with the $R$
 state from an operational perspective, but is semantically different.
 \end{itemize}
 
-\section{Implementation and experimental setup}
+\section{Implementation and experiments}
 The model presented in the previous section can be easily implemented in any
-programming language with graph support. To simulate the model, I chose to use
-three popular classes of randomly generated networks whose characteristics
-I briefly review below.
+programming language with graph support. I chose to use Python, because it is
+easy to program and test with, has good graph support and nice visualization
+libraries.
+To simulate the model, I chose to use three popular classes of randomly generated
+networks whose characteristics are briefly reviewed below. Subsequently, I
+describe the way that simulations are carried out and present their results.
 
 \subsection{Implementation}
 I implemented the SIMR model in Python using
-the NetworkX~\footnote{\url{http://networkx.lanl.gov/}} library for graph
-generation and manipulation. In short, my class \texttt{Simr} encapsulates the
+NetworkX~\footnote{\url{http://networkx.lanl.gov/}} for graph
+generation and manipulation, as well as
+matplotlib~\footnote{\url{http://matplotlib.sourceforge.net/}} for plotting.
+In short, my class \texttt{Simr} encapsulates the
 disease spread model by storing the four model parameters $p_I$, $t_I$, $p_R$
 and $p_M$, keeping track of the state of each node, and updating the node state
 at each time step accordingly. In addition, I have
 written code for visualizing the network state and automatically running
 and plotting multiple simulations. The Python module \texttt{diffuse.py}
-containing all code written for this project can be found on
+containing all code I have written for this project can be found on
 GitHub~\footnote{\url{https://github.com/3lectrologos/sna}}.
 
 \subsection{Random graph models}
@@ -162,12 +167,12 @@ used. The first consists in simulating the network only once, starting with
 a specified number (or percentage) of infected nodes and terminating as soon as
 there are no more infected nodes, which means that the system has reached a
 fixed point. For this type of simulation, I plot the percentage of healthy,
-infected, immune, and dead nodes as function of time steps and call it an
+infected, immune, and dead nodes as a function of time steps and call it an
 \emph{evolution plot}, because it depicts the evolution of a single disease
-spread scenario as time passes.
+spread scenario against time.
 
 The second type of simulation consists in carrying out a number of iterations
-of the above procedure for a number of different values of a specific network
+of the above procedure for a range of different values of a specific network
 parameter. In this case, I plot the average of the healthy, infected,
 and immune node percentages at the end of each iteration, as well as the average
 of the maximum infected node percentage during each iteration, as a function of
@@ -175,43 +180,47 @@ the specified network parameter. I call this kind of plot a
 \emph{summary plot}, because it does not contain detailed information about
 the spread evolution at each iteration.
 
+For all simulations I fix the SIMR model parameters to the values shown
+in Table~\ref{tab:params}. This is done to mainly focus on comparing how the
+graph properties affect the disease spread. Furthermore, all simulations start
+with 5\% randomly chosen infected nodes.
+
 \begin{table}[t]
   \centering
-  \caption{Graph measures of the graphs used in the simulations.}
-  \label{tab:preb_time}
-  \begin{tabularx}{\textwidth}{l  *{6}{>{\centering\arraybackslash}X}}
+  \caption{SIMR model parameters used in the simulations.}
+  \label{tab:params}
+  \begin{tabularx}{\textwidth}{*{4}{>{\centering\arraybackslash}X}}
     \toprule
-    \textbf{Graph} & \textbf{Avg. clustering coeff.} & \textbf{Avg. shortest path length}\\
+    Probability of infection ($p_I$) & Length of infection in time steps ($t_I$) &
+    Probability of removal ($t_R$) & Probability of immunity ($p_M$)\\
     \midrule
-    ER(500, 0.015) & 0.016 & 3.29\\
-    \midrule
-    ER(500, 0.030) & 0.032 & 2.60\\
-    \midrule
-    WS(500, 15, 0.1) & 0.510 & 3.30\\
-    \midrule
-    WS(500, 30, 0.1) & 0.540 & 2.55\\
-    \midrule
-    BA(500, 3) & 0.046 & 3.23\\
-    \midrule
-    BA(500, 7) & 0.081 & 2.56\\
+    0.05 & 6 & 0.2 & 0.05\\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-%\begin{figure}[tb]
-%  \begin{subfigure}[b]{0.5\textwidth}
-%    \centering
-%    \includegraphics[width=\textwidth]{figures/graph_ER_50_01_init}
-%  \end{subfigure}
-%  \begin{subfigure}[b]{0.5\textwidth}
-%    \centering
-%    \includegraphics[width=\textwidth]{figures/graph_ER_50_03_init}
-%  \end{subfigure}
-%  \caption{An ER(50, 0.1) graph (left) and an ER(50, 0.3) graph (right).}
-%  \label{fig:er_graph}
-%\end{figure}
+\subsection{Results}
+Before starting the simulations on large graphs, it is interesting to visualize
+the spread evolution on a smaller graph. Figure~\ref{fig:er_graph_evo} shows
+four evolution stages of a simulation on a fairly dense ER(50, 0.3) graph.
+In panel (a) most nodes are healthy (blue) and 5\% of them, i.e. 3 nodes, are
+infected (green). After 10 steps, in panel (b) the disease has already spread
+to most of the network and there are already a few removed (gray) and immune (gold)
+nodes. In panel (c) we see that after 20 steps the disease has declined significantly,
+leaving behind a number of removed nodes. Finally, in panel (d) the simulation has
+ended, since there are no more infected nodes left.
 
-\begin{figure}[tb]
+As mentioned before, the spread evolution for larger graphs can be visualized
+more conveniently using evolution plots. Figure~\ref{fig:er_evo} shows two such
+plots for two ER graphs, one significantly denser than the other. Two important
+graph metrics for these and other graphs used in following simulations are
+recorded in Table~\ref{tab:metrics}. Note that both evolution plots present
+a clear disease outbreak period, as well as a slow decline after that.
+As expected, the outbreak in the denser graph of the two is both faster and
+significantly more severe (in terms of infection peak and number of removed nodes
+at the end) than the one in the sparser graph.
+
+\begin{figure}[tbp]
   \begin{subfigure}[b]{0.5\textwidth}
     \centering
     \includegraphics[width=\textwidth]{figures/evo_ER_50_03_init}
@@ -236,7 +245,7 @@ the spread evolution at each iteration.
   \label{fig:er_graph_evo}
 \end{figure}
 
-\begin{figure}[tb]
+\begin{figure}[tbp]
   \begin{subfigure}[b]{0.5\textwidth}
     \centering
     \includegraphics[width=\textwidth]{figures/evo_ER_500_0015}
@@ -250,14 +259,62 @@ the spread evolution at each iteration.
   \label{fig:er_evo}
 \end{figure}
 
-\begin{wrapfigure}{R}{0.5\textwidth}
+\begin{table}[tb]
   \centering
+  \caption{Graph measures of the graphs used in the simulations.}
+  \label{tab:metrics}
+  \begin{tabularx}{\textwidth}{l  *{6}{>{\centering\arraybackslash}X}}
+    \toprule
+    \textbf{Graph} & \textbf{Avg. clustering coeff.} & \textbf{Avg. shortest path length}\\
+    \midrule
+    ER(500, 0.015) & 0.016 & 3.29\\
+    \midrule
+    ER(500, 0.030) & 0.032 & 2.60\\
+    \midrule
+    WS(500, 15, 0.1) & 0.510 & 3.30\\
+    \midrule
+    WS(500, 30, 0.1) & 0.540 & 2.55\\
+    \midrule
+    BA(500, 3) & 0.046 & 3.23\\
+    \midrule
+    BA(500, 7) & 0.081 & 2.56\\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\begin{wrapfigure}[16]{R}{0.5\textwidth}
+  \centering
+  \vspace{-7pt}
   \includegraphics[width=0.5\textwidth]{figures/sum_ER_500_p}
-  \caption{Summary plot for ER(500, p) graphs (100 simulations).}
+  \vspace{-17pt}
+  \caption{Summary plot for ER(500, p).}
   \label{fig:er_sum}
 \end{wrapfigure}
 
-\begin{figure}[tb]
+The effect of graph density on the severity of disease spread is seen more
+clearly when using a summary plot, like the one shown in
+Figure~\ref{fig:er_sum}. More specifically, this plot depicts average node
+percentages for different values of the ER graph parameter $p$, using
+100 simulations per tested value. It is obvious that for larger values of
+$p$, i.e. denser graphs, the disease spread becomes more pronounced.
+More importantly, note that, since $n = 500$, the percolation threshold of
+these graphs is about 0.02, which is exactly the value around which the
+disease spread starts to increase significantly. Also, it is evident that
+at $p = 0.1$ the disease has almost reached its maximum spread and further
+increasing $p$ does not seem to make a difference with respect to the
+measured quantities.
+
+Next, I chose two WS graphs, such that their average shortest path lengths
+are about the same with the previously examined ER graphs, in order to
+examine the clustering (small-world) effect. Table~\ref{tab:metrics} shows that
+the average shortest path lengths are very close to the ones of the ER graphs,
+but the clustering coefficients are vastly larger. The corresponding
+evolution plots are shown in Figure~\ref{fig:ws_evo}. Note that the disease
+outbreak is clearly larger in the WS graphs compared to the plots of
+Figure~\ref{fig:er_evo}, which validates the hypothesis that a large clustering
+coefficient boosts disease spread.
+
+\begin{figure}[b]
   \begin{subfigure}[b]{0.5\textwidth}
     \centering
     \includegraphics[width=\textwidth]{figures/evo_WS_500_15_01}
@@ -299,12 +356,59 @@ the spread evolution at each iteration.
   \label{fig:ba_evo}
 \end{figure}
 
-\begin{wrapfigure}{R}{0.5\textwidth}
+Two summary plots for the two parameters of the WS model are shown in
+Figure~\ref{fig:ws_sum}. Concerning the left plot, the fact that the
+results seem to be completely independent of the $p$ parameter might
+seem surprising at first.
+However, increasing the rewiring probability $p$ decreases both the
+clustering coefficient and the average path length. If clustering
+had no effect, we would expect that the disease spread would increase
+with increasing $p$. The fact that it stays constant is a further validation
+of the claim that clustering trades-off average shortest path length
+when it comes to disease spread. The summary plot with respect to $k$
+is easily explained, since increasing the number of initial neighbors
+in the WS model, both increases clustering and decreases average
+path length.
+
+\begin{wrapfigure}[16]{r}{0.5\textwidth}
   \centering
+  \vspace{-5pt}
   \includegraphics[width=0.5\textwidth]{figures/sum_BA_500_m}
-  \caption{Summary plot for BA(500, m) graphs (100 simulations).}
+  \vspace{-17pt}
+  \caption{Summary plot for BA(500, m).}
   \label{fig:ba_sum}
 \end{wrapfigure}
+
+Continuing in the same spirit, I used two BA graphs with same average
+path lengths as the two previous models. From Table~\ref{tab:metrics}
+we can see that the average clustering coefficient for these graphs
+are larger than those of the ER graphs, but quite smaller than those
+of the BA graphs. The evolution plots of Figure~\ref{fig:ba_evo}
+are comparable to the ones of the ER graphs in Figure~\ref{fig:er_evo},
+which means that the preferential attachment process does not seem
+to make a difference at this point. Also, the increasing spread with
+increasing parameter $m$, shown if the summary plot of
+Figure~\ref{fig:ba_sum}, is expected.
+
+As mentioned when discussing the BA model, its most important feature
+is the creation of large hubs, nodes with a large degree, due to
+preferential attachment. To examine the effect of this property
+on disease spread, I conducted an additional experiment. I started
+with three networks, one of each type, and tuned their parameters
+so that their disease spread behavior is similar. Then, I immunized
+a number of nodes with the highest closeness
+centrality\footnote{This seems to be the most appropriate centrality
+measure in this case, since we are talking about a disease which is
+spread from a node to its neighbors.}
+scores from
+each network at the start of each simulation and ran the simulation
+on the modified networks. The results are shown in
+Figure~\ref{fig:hub_sum}. Note that, after the immunization of 30 nodes,
+in both the ER and the WS model the average max. infected percentage
+has dropped from 80\% to about 70\%, whereas in the BA model the
+drop is clearly larger, namely from 80\% to about 60\%. This illustrates
+that in the BA model the presence of ``hub'' nodes is more accentuated
+than in the other two models.
 
 \begin{figure}[tb]
   \begin{subfigure}[b]{0.5\textwidth}
@@ -324,8 +428,32 @@ the spread evolution at each iteration.
   \end{subfigure}
   \caption{Summary plots when a number of nodes with the highest
     closeness centrality scores are immune.}
-  \label{fig:ba_evo}
+  \label{fig:hub_sum}
 \end{figure}
+
+\section{Conclusion}
+I have presented SIMR, a slightly more complex model than the classic SIR/SIS
+ones
+for modeling disease spread in networks, and a Python implementation of it.
+I simulated this model on three types of randomly generated graphs and
+noted how the graph types and parameters affect disease spread. Besides the
+obvious observation that larger graph density (equiv. smaller average
+shortest path length) increases disease spread, the main observations
+are that (1) graph clustering also tends to boost spread, making WS graphs
+in general more susceptible to diseases than ER graphs, and (2) containing
+the disease spread by immunizing targeted nodes is more effective in the BA
+model where there are clearer ``hub'' nodes compared to the other models.
+
+The treatment of the subject here was fairly short. It would be interesting
+to see how the model parameters affect disease spread and if there are critical
+threshold for their values that make a big difference. Another issue for
+investigation would be the effect of dynamic conditions, including randomly
+occuring infected nodes and changing network size and structure. Even further,
+the dynamics could include game-theoretical concepts, e.g. introduce agents
+that try to prevent disease spread to model government action.
+Finally, the biggest challenge would be to simulate the model on networks
+of more realistic size and structure, e.g. graph models of a whole city
+or country.
 
 \bibliographystyle{plain}
 \bibliography{report}
