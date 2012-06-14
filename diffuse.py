@@ -456,7 +456,7 @@ def savefig(outfile):
     outfile = FIG_PATH + outfile
     plt.savefig(outfile + '.pdf', format='pdf', bbox_inches='tight') 
 
-def gen_er_plots():
+def gen_er_plots(niter):
     # ER graph state evolution plots
     g = Simr(gtype='ER', gparam=[50, 0.3], k=0.05)
     g.k = 0.05
@@ -476,18 +476,12 @@ def gen_er_plots():
     savefig('evo_' + g4.graph_name())
 
     # ER summary plots
-    NITER = 2
-    gfun = lambda p: Simr(gtype='ER', gparam=[50, p], k=0.05)
-    res = simulate_range(gfun, numpy.linspace(0, 0.8, 20), NITER)
-    plot_range(res, xlabel='p')
-    savefig('sum_ER_50_p')
-
     gfun = lambda p: Simr(gtype='ER', gparam=[500, p], k=0.05)
-    res = simulate_range(gfun, numpy.linspace(0, 0.2, 20), NITER)
+    res = simulate_range(gfun, numpy.linspace(0, 0.2, 20), niter)
     plot_range(res, xlabel='p')
     savefig('sum_ER_500_p')
 
-def gen_ws_plots():
+def gen_ws_plots(niter):
     # WS evolution plots
     g3 = Simr(gtype='WS', gparam=[500, 15, 0.1], k=0.05)
     g3.print_graph_info()
@@ -501,17 +495,16 @@ def gen_ws_plots():
     savefig('evo_' + g4.graph_name())
 
     # WS summary plots
-    NITER = 2
     gfun = lambda p: Simr(gtype='WS', gparam=[500, 30, p], k=0.05)
-    res = simulate_range(gfun, numpy.linspace(0, 1, 20), NITER)
+    res = simulate_range(gfun, numpy.linspace(0, 1, 20), niter)
     plot_range(res, xlabel='p')
     savefig('sum_WS_500_25_p')
     gfun = lambda k: Simr(gtype='WS', gparam=[500, k, 0.1], k=0.05)
-    res = simulate_range(gfun, range(3, 40), NITER)
+    res = simulate_range(gfun, range(3, 40), niter)
     plot_range(res, xlabel='k')
     savefig('sum_WS_500_k_01')
 
-def gen_ba_plots():
+def gen_ba_plots(niter):
     # BA evolution plots
     g = Simr(gtype='BA', gparam=[500, 3], k=0.05)
     g.print_graph_info()
@@ -525,9 +518,8 @@ def gen_ba_plots():
     savefig('evo_' + g.graph_name())
 
     # BA summary plots
-    NITER = 2
     gfun = lambda p: Simr(gtype='BA', gparam=[500, p], k=0.05)
-    res = simulate_range(gfun, range(1, 25), NITER)
+    res = simulate_range(gfun, range(1, 25), niter)
     plot_range(res, xlabel='m')
     savefig('sum_BA_500_m')
 
@@ -541,32 +533,30 @@ def rm_hubs(g, n):
     g.init_immune = hubs
     return g
 
-def gen_rmhubs_plots():
-    NITER = 10
+def gen_rmhubs_plots(niter):
     # ER
     gfun = lambda n: rm_hubs(Simr(gtype='ER', gparam=[500, 0.05], k=0.05), n)
-    res = simulate_range(gfun, range(0, 31, 3), NITER)
+    res = simulate_range(gfun, range(0, 31, 3), niter)
     plot_range(res, xlabel='Number of removed nodes')
     savefig('hubs_ER_500_005')
-
     # WS
     gfun = lambda n: rm_hubs(Simr(gtype='WS', gparam=[500, 29, 0.1], k=0.05), n)
-    res = simulate_range(gfun, range(0, 31, 3), NITER)
+    res = simulate_range(gfun, range(0, 31, 3), niter)
     plot_range(res, xlabel='Number of removed nodes')
     savefig('hubs_WS_500_29_01')
-
     # BA
     gfun = lambda n: rm_hubs(Simr(gtype='BA', gparam=[500, 13], k=0.05), n)
-    res = simulate_range(gfun, range(0, 31, 3), NITER)
+    res = simulate_range(gfun, range(0, 31, 3), niter)
     plot_range(res, xlabel='Number of removed nodes')
     savefig('hubs_BA_500_13')
 
 if __name__=="__main__":
+    niter = 100
     # ER plots
-    gen_er_plots()
+    gen_er_plots(niter)
     # WS plots
-    gen_ws_plots()
+    gen_ws_plots(niter)
     # BA plots
-    gen_ba_plots()
+    gen_ba_plots(niter)
     # Removed hubs plots
-    gen_rmhubs_plots()
+    gen_rmhubs_plots(niter)
