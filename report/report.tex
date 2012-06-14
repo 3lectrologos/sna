@@ -57,11 +57,11 @@ the spread of behavioral phenomena, also referred to as
 
 To fully analyze disease spread in networks, one needs to know in detail the
 characteristics of the disease itself (transimission, active period, etc.),
-as well as a fine-grained network of interactions. Moreover, the network
+as well as have available a fine-grained network of interactions. Moreover, the network
 information required may depend on the disease attributes (e.g. for an airborne virus
-it may be important to include interactions in public transport). Since this
+it may be important to include interactions in public transports). Since this
 kind of information is usually not available, there have been proposed a
-number of simple models that can be used as a first step for analyzing disease
+number of simple models that can be used as a first step for simulating disease
 spread. Two of them, commonly found in the literature, are the SIR and SIS
 models~\cite{easley, newman}.
 
@@ -71,7 +71,7 @@ SIR model healthy nodes that can be infected are in the \emph{susceptible} ($S$)
 state, infected nodes are in the \emph{infected} (I) state, and nodes that have
 gone through the infection and cannot be infected again are in the \emph{removed}
 ($R$) state. At every time step, an $I$ node may independently infect each of
-its $S$ neighbors with probability $p_I$ and an $I$ node stays infected for
+its $S$ neighbors with probability $p_I$. Each $I$ node stays infected for
 $t_I$ steps and, afterwards, transitions into the $R$ state.
 The SIS model is very similar and only differs in the fact that nodes return
 to the $S$ state after the infection is over, instead of transitioning to the
@@ -82,9 +82,9 @@ I introduce a new disease spread model, called SIMR, which is very similar to
 the SIR/SIS models, albeit slightly more complex. The rationale behind extending
 these models is twofold. First, the SIR/SIS models only allow transitions out
 of the $I$ state after the whole infectious period has passed, which I find to be
-constraining, because it defines a completely fixed period that a node will be
+constraining, because it defines a completely fixed period during which a node is
 infected. Second, in choosing one of the two models, one has to stick with
-always transitioning to either the $S$ state or the $R$ state, after the infection
+always transitioning to either the $S$ state or the $R$ state after the infection
 is over, which I also find inflexible.
 
 With the above ideas in mind, the SIMR model works as follows:
@@ -100,18 +100,18 @@ probability.
 \item The second extension is that the transition after the infection is over
 is not fixed, but is determined probabilistically. In particular, the previously
 infected node transitions to an \emph{immune} ($M$) state with probability $p_M$,
-or otherwise returns to the $S$ state. The $M$ state is the same with the $R$
+or otherwise returns to the $S$ state. The $M$ state is similar to the $R$
 state from an operational perspective, but is semantically different.
 \end{itemize}
 
-\section{Implementation and experiments}
+\section{Implementation and experimental setup}
 The model presented in the previous section can be easily implemented in any
 programming language with graph support. I chose to use Python, because it is
 easy to program and test with, has good graph support and nice visualization
 libraries.
 To simulate the model, I chose to use three popular classes of randomly generated
 networks whose characteristics are briefly reviewed below. Subsequently, I
-describe the way that simulations are carried out and present their results.
+describe the way that simulations are carried out.
 
 \subsection{Implementation}
 I implemented the SIMR model in Python using
@@ -157,14 +157,14 @@ $n$ nodes, one node is added at a time and it is connected to $m$ of the
 existing nodes with probability proportional to the degree of each existing
 node. It follows that the model favors the creation of hubs, i.e. nodes that
 accumulate a lot of edges, which is expected to play a role in disease spread
-(for example, removing a few large hubs from the network might make a huge
+(for example, removing a few large hubs from the network might make a big
 difference). I will refer to a generated graph of this class
 as BA$(n, m)$.
 
 \subsection{Types of experiments}
 To obtain the results in the following section, two types of simulations are
 used. The first consists in simulating the network only once, starting with
-a specified number (or percentage) of infected nodes and terminating as soon as
+a specified percentage of infected nodes and terminating as soon as
 there are no more infected nodes, which means that the system has reached a
 fixed point. For this type of simulation, I plot the percentage of healthy,
 infected, immune, and dead nodes as a function of time steps and call it an
@@ -194,12 +194,12 @@ with 5\% randomly chosen infected nodes.
     Probability of infection ($p_I$) & Length of infection in time steps ($t_I$) &
     Probability of removal ($t_R$) & Probability of immunity ($p_M$)\\
     \midrule
-    0.05 & 6 & 0.2 & 0.05\\
+    0.05 & 6 & 0.05 & 0.2\\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-\subsection{Results}
+\section{Results}
 Before starting the simulations on large graphs, it is interesting to visualize
 the spread evolution on a smaller graph. Figure~\ref{fig:er_graph_evo} shows
 four evolution stages of a simulation on a fairly dense ER(50, 0.3) graph.
@@ -208,13 +208,13 @@ infected (green). After 10 steps, in panel (b) the disease has already spread
 to most of the network and there are already a few removed (gray) and immune (gold)
 nodes. In panel (c) we see that after 20 steps the disease has declined significantly,
 leaving behind a number of removed nodes. Finally, in panel (d) the simulation has
-ended, since there are no more infected nodes left.
+ended after 35 steps, since there are no more infected nodes left.
 
 As mentioned before, the spread evolution for larger graphs can be visualized
 more conveniently using evolution plots. Figure~\ref{fig:er_evo} shows two such
 plots for two ER graphs, one significantly denser than the other. Two important
 graph metrics for these and other graphs used in following simulations are
-recorded in Table~\ref{tab:metrics}. Note that both evolution plots present
+recorded in Table~\ref{tab:metrics}. Note that both evolution plots exhibit
 a clear disease outbreak period, as well as a slow decline after that.
 As expected, the outbreak in the denser graph of the two is both faster and
 significantly more severe (in terms of infection peak and number of removed nodes
@@ -239,7 +239,7 @@ at the end) than the one in the sparser graph.
   \begin{subfigure}[b]{0.5\textwidth}
     \centering
     \includegraphics[width=\textwidth]{figures/evo_ER_50_03_final}
-    \caption{Final graph state}
+    \caption{Final graph state after 35 steps}
   \end{subfigure}
   \caption{Different stages of the simulation for an ER(50, 0.3) graph.}
   \label{fig:er_graph_evo}
@@ -295,17 +295,19 @@ The effect of graph density on the severity of disease spread is seen more
 clearly when using a summary plot, like the one shown in
 Figure~\ref{fig:er_sum}. More specifically, this plot depicts average node
 percentages for different values of the ER graph parameter $p$, using
-100 simulations per tested value. It is obvious that for larger values of
-$p$, i.e. denser graphs, the disease spread becomes more pronounced.
+100 simulations per tested value. (The same number of simulations is carried
+out for all summary plots that will follow.) It is obvious that for larger values
+of $p$, i.e. denser graphs, the disease spread becomes more pronounced.
 More importantly, note that, since $n = 500$, the percolation threshold of
-these graphs is about 0.02, which is exactly the value around which the
+these graphs is about 0.02, which is notably the value around which the
 disease spread starts to increase significantly. Also, it is evident that
 at $p = 0.1$ the disease has almost reached its maximum spread and further
-increasing $p$ does not seem to make a difference with respect to the
+increasing $p$ does not seem to make a big difference with respect to the
 measured quantities.
 
-Next, I chose two WS graphs, such that their average shortest path lengths
-are about the same with the previously examined ER graphs, in order to
+Next, I have chosen two sets of WS graph parameters, such that the average
+shortest path lengths of the resulting graphs
+are about the same as the previously examined ER graphs, in order to
 examine the clustering (small-world) effect. Table~\ref{tab:metrics} shows that
 the average shortest path lengths are very close to the ones of the ER graphs,
 but the clustering coefficients are vastly larger. The corresponding
@@ -370,16 +372,17 @@ is easily explained, since increasing the number of initial neighbors
 in the WS model, both increases clustering and decreases average
 path length.
 
-\begin{wrapfigure}[16]{r}{0.5\textwidth}
+\begin{wrapfigure}[15]{r}{0.5\textwidth}
   \centering
-  \vspace{-5pt}
+  \vspace{-15pt}
   \includegraphics[width=0.5\textwidth]{figures/sum_BA_500_m}
   \vspace{-17pt}
   \caption{Summary plot for BA(500, m).}
   \label{fig:ba_sum}
 \end{wrapfigure}
 
-Continuing in the same spirit, I used two BA graphs with same average
+Continuing in the same spirit, I use two sets of BA graph parameters resulting
+in the same average
 path lengths as the two previous models. From Table~\ref{tab:metrics}
 we can see that the average clustering coefficient for these graphs
 are larger than those of the ER graphs, but quite smaller than those
@@ -391,20 +394,20 @@ increasing parameter $m$, shown if the summary plot of
 Figure~\ref{fig:ba_sum}, is expected.
 
 As mentioned when discussing the BA model, its most important feature
-is the creation of large hubs, nodes with a large degree, due to
+is the creation of ``hubs'', i.e. nodes with a large degree, due to
 preferential attachment. To examine the effect of this property
 on disease spread, I conducted an additional experiment. I started
 with three networks, one of each type, and tuned their parameters
 so that their disease spread behavior is similar. Then, I immunized
 a number of nodes with the highest closeness
-centrality\footnote{This seems to be the most appropriate centrality
-measure in this case, since we are talking about a disease which is
-spread from a node to its neighbors.}
+centrality\footnote{Closeness centrality seems to be the most appropriate
+centrality measure in this case, since we are talking about a disease which
+is spread from a node to its neighbors.}
 scores from
-each network at the start of each simulation and ran the simulation
-on the modified networks. The results are shown in
+each network at the start of each simulation and simulated
+the modified networks. The results are shown in the summary plots of
 Figure~\ref{fig:hub_sum}. Note that, after the immunization of 30 nodes,
-in both the ER and the WS model the average max. infected percentage
+in both the ER and the WS models, the average max. infected percentage
 has dropped from 80\% to about 70\%, whereas in the BA model the
 drop is clearly larger, namely from 80\% to about 60\%. This illustrates
 that in the BA model the presence of ``hub'' nodes is more accentuated
@@ -433,26 +436,28 @@ than in the other two models.
 
 \section{Conclusion}
 I have presented SIMR, a slightly more complex model than the classic SIR/SIS
-ones
-for modeling disease spread in networks, and a Python implementation of it.
-I simulated this model on three types of randomly generated graphs and
+ones for modeling disease spread in networks.
+I simulated this model on three types of randomly generated graphs using a
+Python implementation of it and
 noted how the graph types and parameters affect disease spread. Besides the
-obvious observation that larger graph density (equiv. smaller average
+general (and obvious) observation that larger graph density (equiv. smaller average
 shortest path length) increases disease spread, the main observations
-are that (1) graph clustering also tends to boost spread, making WS graphs
-in general more susceptible to diseases than ER graphs, and (2) containing
-the disease spread by immunizing targeted nodes is more effective in the BA
+are that (1) for ER graphs the point at which disease spread starts to grow
+significantly seems to be close to the percolation threshold, (2) graph
+clustering tends to boost disease spread, making WS graphs
+in general more susceptible to diseases than ER graphs, and (3) containing
+disease spread by immunizing targeted nodes is more effective in the BA
 model where there are clearer ``hub'' nodes compared to the other models.
 
 The treatment of the subject here was fairly short. It would be interesting
 to see how the model parameters affect disease spread and if there are critical
-threshold for their values that make a big difference. Another issue for
+thresholds for their values that make a big difference. Another issue for
 investigation would be the effect of dynamic conditions, including randomly
-occuring infected nodes and changing network size and structure. Even further,
+occuring infected nodes and varying network size and structure. Even further,
 the dynamics could include game-theoretical concepts, e.g. introduce agents
-that try to prevent disease spread to model government action.
+that try to prevent disease spread (e.g. to model government action).
 Finally, the biggest challenge would be to simulate the model on networks
-of more realistic size and structure, e.g. graph models of a whole city
+of more realistic size and structure, for example, graph models of a whole city
 or country.
 
 \bibliographystyle{plain}
