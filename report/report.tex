@@ -2,6 +2,8 @@
 \usepackage{nips12submit_e,times}
 %\documentstyle[nips12submit_09,times,art10]{article} % For LaTeX 2.09
 
+%\usepackage[usenames,dvipsnames]{color}
+
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{textcomp}
@@ -14,13 +16,20 @@
 \usepackage{array}
 \usepackage{tabularx}
 \usepackage{booktabs}
-\usepackage[pdftex]{graphicx}
-\usepackage{color}
+\usepackage{graphicx}
 
 \usepackage{url}
-\usepackage{hyperref}
+\usepackage[hyperfootnotes=false,citecolor=RedOrange,linkcolor=RoyalBlue,urlcolor=DarkOrchid,colorlinks]{hyperref}
+\usepackage[all]{hypcap}
 
 \newcommand{\todo}[1]{\noindent\texttt{\color[rgb]{0.5,0.1,0.1} TODO: #1}}
+
+\newcommand{\sectref}[1]{\mbox{Section~\ref{#1}}}
+\newcommand{\figref}[1]{\mbox{Figure~\ref{#1}}}
+\newcommand{\tabref}[1]{\mbox{Table~\ref{#1}}}
+\renewcommand{\sectref}[1]{\hyperref[#1]{\mbox{Section~\ref*{#1}}}}
+\renewcommand{\figref}[1]{\hyperref[#1]{\mbox{Figure~\ref*{#1}}}}
+\renewcommand{\tabref}[1]{\hyperref[#1]{\mbox{Table~\ref*{#1}}}}
 
 \title{Simulating disease spread in social networks\thanks{Final project
 for the course ``Introduction to Social Network Analysis'' (Spring
@@ -115,9 +124,9 @@ describe the way that simulations are carried out.
 
 \subsection{Implementation}
 I implemented the SIMR model in Python using
-NetworkX~\footnote{\url{http://networkx.lanl.gov/}} for graph
+NetworkX\footnote{\url{http://networkx.lanl.gov/}} for graph
 generation and manipulation, as well as
-matplotlib~\footnote{\url{http://matplotlib.sourceforge.net/}} for plotting.
+matplotlib\footnote{\url{http://matplotlib.sourceforge.net/}} for plotting.
 In short, my class \texttt{Simr} encapsulates the
 disease spread model by storing the four model parameters $p_I$, $t_I$, $p_R$
 and $p_M$, keeping track of the state of each node, and updating the node state
@@ -125,7 +134,7 @@ at each time step accordingly. In addition, I have
 written code for visualizing the network state and automatically running
 and plotting multiple simulations. The Python module \texttt{diffuse.py}
 containing all code I have written for this project can be found on
-GitHub~\footnote{\url{https://github.com/3lectrologos/sna}}.
+GitHub\footnote{\url{https://github.com/3lectrologos/sna}}.
 
 \subsection{Random graph models}
 \noindent\textbf{Erdős–Rényi model.} The Erdős–Rényi (ER) model~\cite{erdos} is
@@ -181,7 +190,7 @@ the specified network parameter. I call this kind of plot a
 the spread evolution at each iteration.
 
 For all simulations I fix the SIMR model parameters to the values shown
-in Table~\ref{tab:params}. This is done to mainly focus on comparing how the
+in \tabref{tab:params}. This is done to mainly focus on comparing how the
 graph properties affect the disease spread. Furthermore, all simulations start
 with 5\% randomly chosen infected nodes.
 
@@ -201,7 +210,7 @@ with 5\% randomly chosen infected nodes.
 
 \section{Results}
 Before starting the simulations on large graphs, it is interesting to visualize
-the spread evolution on a smaller graph. Figure~\ref{fig:er_graph_evo} shows
+the spread evolution on a smaller graph. \figref{fig:er_graph_evo} shows
 four evolution stages of a simulation on a fairly dense ER(50, 0.3) graph.
 In panel (a) most nodes are healthy (blue) and 5\% of them, i.e. 3 nodes, are
 infected (green). After 10 steps, in panel (b) the disease has already spread
@@ -211,10 +220,10 @@ leaving behind a number of removed nodes. Finally, in panel (d) the simulation h
 ended after 35 steps, since there are no more infected nodes left.
 
 As mentioned before, the spread evolution for larger graphs can be visualized
-more conveniently using evolution plots. Figure~\ref{fig:er_evo} shows two such
+more conveniently using evolution plots. \figref{fig:er_evo} shows two such
 plots for two ER graphs, one significantly denser than the other. Two important
 graph metrics for these and other graphs used in following simulations are
-recorded in Table~\ref{tab:metrics}. Note that both evolution plots exhibit
+recorded in \tabref{tab:metrics}. Note that both evolution plots exhibit
 a clear disease outbreak period, as well as a slow decline after that.
 As expected, the outbreak in the denser graph of the two is both faster and
 significantly more severe (in terms of infection peak and number of removed nodes
@@ -293,7 +302,7 @@ at the end) than the one in the sparser graph.
 
 The effect of graph density on the severity of disease spread is seen more
 clearly when using a summary plot, like the one shown in
-Figure~\ref{fig:er_sum}. More specifically, this plot depicts average node
+\figref{fig:er_sum}. More specifically, this plot depicts average node
 percentages for different values of the ER graph parameter $p$, using
 100 simulations per tested value. (The same number of simulations is carried
 out for all summary plots that will follow.) It is obvious that for larger values
@@ -308,12 +317,12 @@ measured quantities.
 Next, I have chosen two sets of WS graph parameters, such that the average
 shortest path lengths of the resulting graphs
 are about the same as the previously examined ER graphs, in order to
-examine the clustering (small-world) effect. Table~\ref{tab:metrics} shows that
+examine the clustering (small-world) effect. \tabref{tab:metrics} shows that
 the average shortest path lengths are very close to the ones of the ER graphs,
 but the clustering coefficients are vastly larger. The corresponding
-evolution plots are shown in Figure~\ref{fig:ws_evo}. Note that the disease
+evolution plots are shown in \figref{fig:ws_evo}. Note that the disease
 outbreak is clearly larger in the WS graphs compared to the plots of
-Figure~\ref{fig:er_evo}, which validates the hypothesis that a large clustering
+\figref{fig:er_evo}, which validates the hypothesis that a large clustering
 coefficient boosts disease spread.
 
 \begin{figure}[b]
@@ -359,7 +368,7 @@ coefficient boosts disease spread.
 \end{figure}
 
 Two summary plots for the two parameters of the WS model are shown in
-Figure~\ref{fig:ws_sum}. Concerning the left plot, the fact that the
+\figref{fig:ws_sum}. Concerning the left plot, the fact that the
 results seem to be completely independent of the $p$ parameter might
 seem surprising at first.
 However, increasing the rewiring probability $p$ decreases both the
@@ -383,15 +392,15 @@ path length.
 
 Continuing in the same spirit, I use two sets of BA graph parameters resulting
 in the same average
-path lengths as the two previous models. From Table~\ref{tab:metrics}
+path lengths as the two previous models. From \tabref{tab:metrics}
 we can see that the average clustering coefficient for these graphs
 are larger than those of the ER graphs, but quite smaller than those
-of the BA graphs. The evolution plots of Figure~\ref{fig:ba_evo}
-are comparable to the ones of the ER graphs in Figure~\ref{fig:er_evo},
+of the BA graphs. The evolution plots of \figref{fig:ba_evo}
+are comparable to the ones of the ER graphs in \figref{fig:er_evo},
 which means that the preferential attachment process does not seem
 to make a difference at this point. Also, the increasing spread with
 increasing parameter $m$, shown if the summary plot of
-Figure~\ref{fig:ba_sum}, is expected.
+\figref{fig:ba_sum}, is expected.
 
 As mentioned when discussing the BA model, its most important feature
 is the creation of ``hubs'', i.e. nodes with a large degree, due to
@@ -406,7 +415,7 @@ is spread from a node to its neighbors.}
 scores from
 each network at the start of each simulation and simulated
 the modified networks. The results are shown in the summary plots of
-Figure~\ref{fig:hub_sum}. Note that, after the immunization of 30 nodes,
+\figref{fig:hub_sum}. Note that, after the immunization of 30 nodes,
 in both the ER and the WS models, the average max. infected percentage
 has dropped from 80\% to about 70\%, whereas in the BA model the
 drop is clearly larger, namely from 80\% to about 60\%. This illustrates
