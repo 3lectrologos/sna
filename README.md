@@ -1,11 +1,18 @@
 Simulating disease spread in social networks
 ============================================
-Final project of the "Introduction to Natural Language Processing course"
+Final project of the _Introduction to Social Network Analysis_ course
 (ETH Zurich, Spring Semester 2012).
 
 Author
 ------
 Alkis Gkotovos (<alkisg@student.ethz.ch>)
+
+Dependencies
+------------
+Required python packages: `matplotlib`, `networkx`, `numpy`, `progressbar`
+
+For example, using python's `easy_install` from `setuptools` on Ubuntu:    
+`pip install matplotlib networkx numpy progressbar`
 
 Description and usage example
 -----------------------------
